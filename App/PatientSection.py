@@ -2,25 +2,30 @@ import customtkinter as ctk
 from PIL import Image
 import sqlite3
 
-# === Patient Pages === #
-class Home_patPage(ctk.CTkFrame):
-    def show_internal_page(self, page_name):
-        for page in self.pages.values():
-            page.grid_forget()
-            self.pages[page_name].grid(row=1, column=0)
-
+class AppointmentPage(ctk.CTkFrame):
     def __init__(self, master, controller):
-        super().__init__(master, fg_color="white")
-        self.master = master
+        super().__init__(master)
+        self.controller = controller
+        ctk.CTkLabel(self, text="📅 Book Appointment Page", font=ctk.CTkFont(size=18)).pack(pady=40)
+        
+class HealthDataPage(ctk.CTkFrame):
+    def __init__(self, master, controller):
+        super().__init__(master)
+        self.controller = controller
+        ctk.CTkLabel(self, text="📂 Health Data Page", font=ctk.CTkFont(size=18)).pack(pady=40)
+
+class EmergencyPage(ctk.CTkFrame):
+    def __init__(self, master, controller):
+        super().__init__(master)
+        self.controller = controller
+        ctk.CTkLabel(self, text="🚨 Emergency Contact Page", font=ctk.CTkFont(size=18)).pack(pady=40)
+
+class Main(ctk.CTkFrame):
+    def __init__(self, master, controller):
+        super().__init__(master)
         self.controller = controller
         self.setup_gui()
-
-        self.pages = {
-            "appointment": AppointmentPage(master, controller),
-            "data": HealthDataPage(master, controller),
-            "emergency": EmergencyPage(master, controller),
-        }
-
+    
     def setup_gui(self): 
         # === Header Title ===
         title_label = ctk.CTkLabel(self, text="Welcome, John", font=ctk.CTkFont(size=22, weight="bold"))
@@ -41,7 +46,7 @@ class Home_patPage(ctk.CTkFrame):
             height=50,
             width=250,
             font=ctk.CTkFont(size=16),
-            command=lambda: self.show_internal_page("appointment")
+            command=lambda: self.controller.show_internal_page("appointment")
         )
         book_button.grid(row=2, column=0, padx=35, pady=10, sticky="ew")
 
@@ -51,7 +56,7 @@ class Home_patPage(ctk.CTkFrame):
             height=50,
             width=250,
             font=ctk.CTkFont(size=16),
-            command=lambda: self.show_internal_page("data")
+            command=lambda: self.controller.show_internal_page("data")
         )
         data_button.grid(row=3, column=0, padx=35, pady=10, sticky="ew")
 
@@ -63,7 +68,7 @@ class Home_patPage(ctk.CTkFrame):
             font=ctk.CTkFont(size=16, weight="bold"),
             fg_color="#ff6666",
             hover_color="#ff4d4d",
-            command=lambda: self.show_internal_page("emergency")
+            command=lambda: self.controller.show_internal_page("emergency")
         )
         emergency_button.grid(row=4, column=0, padx=35, pady=(30, 10), sticky="ew")
 
@@ -81,20 +86,23 @@ class Home_patPage(ctk.CTkFrame):
         )
         menu_button.pack()    
 
-class AppointmentPage(ctk.CTkFrame):
-    def __init__(self, master, controller):
-        super().__init__(master)
-        self.controller = controller
-        ctk.CTkLabel(self, text="📅 Book Appointment Page", font=ctk.CTkFont(size=18)).pack(pady=40)
-        
-class HealthDataPage(ctk.CTkFrame):
-    def __init__(self, master, controller):
-        super().__init__(master)
-        self.controller = controller
-        ctk.CTkLabel(self, text="📂 Health Data Page", font=ctk.CTkFont(size=18)).pack(pady=40)
 
-class EmergencyPage(ctk.CTkFrame):
-    def __init__(self, master,controller):
-        super().__init__(master)
-        self.controller = controller
-        ctk.CTkLabel(self, text="🚨 Emergency Contact Page", font=ctk.CTkFont(size=18)).pack(pady=40)
+# === Patient Pages === #
+class Home_patPage(ctk.CTkFrame):
+    def show_internal_page(self, page_name):
+            for page in self.pages.values():
+                page.grid_forget()
+            self.pages[page_name].grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
+
+    def __init__(self, master, controller):
+        super().__init__(master, fg_color="white")
+        self.master = master
+
+        self.pages = {
+            "main": Main(self, self),
+            "appointment": AppointmentPage(self, self),
+            "data": HealthDataPage(self, self),
+            "emergency": EmergencyPage(self, self),
+        }
+
+        self.show_internal_page("main")

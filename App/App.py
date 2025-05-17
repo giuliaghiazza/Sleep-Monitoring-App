@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
 import sqlite3
-from PatientSection import Home_patPage
+from PatientSection import Home_patPage, AppointmentPage, HealthDataPage, EmergencyPage
 from DoctorSection import Home_docPage
 from TechnicianSection import Home_tecPage
 
@@ -86,16 +86,16 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
         user= (self.user_entry.get(),)
         pw= self.pass_entry.get()
 
-        self.cursor.execute('SELECT nome_utente FROM patients WHERE nome_utente=?', user)
+        self.cursor.execute('SELECT username FROM Users WHERE username=?', user)
         result = self.cursor.fetchone()[0]
 
         if result is not None:
-            self.cursor.execute('SELECT psw FROM patients WHERE nome_utente=?', user)
+            self.cursor.execute('SELECT psw FROM Users WHERE username=?', user)
             password_try= self.cursor.fetchone()[0]
             if pw==password_try:
                 #self.outcome_lable.configure(text='Login Successful, welcome {user[0]}')
                 #self.outcome_lable.configure(text_color='green')                           #se lo sto mandando ad un altra pagina non penso serva far vedere sta roba
-                self.cursor.execute('SELECT role FROM patients WHERE nome_utente=?', user)
+                self.cursor.execute('SELECT role FROM Users WHERE username=?', user)
                 role = self.cursor.fetchone()[0]
                 if role=='D':
                     self.controller.show_page("home_doc")
@@ -265,9 +265,15 @@ class SigninPage(ctk.CTkFrame):
                 self.outcome_label.configure(text=f'Insert {label}', text_color='red')
                 return  #exits
 
+        role = 'P'
         self.cursor.execute('''
-            INSERT INTO patients(nome_utente, psw, Name, Surname, Dob, Age, City_of_Birth, City_of_Recidency, CAP)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO Users(nome_utente, psw, role)
+            VALUES (?, ?, ?)
+        ''', (user, pw, role))
+
+        self.cursor.execute('''
+            INSERT INTO Patients(Name, Surname, Dob, Age, City_of_Birth, City_of_Recidency, CAP)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (user, pw, name, surname, dob, age, cob, cor, cap))
         self.controller.show_page("log")
 
