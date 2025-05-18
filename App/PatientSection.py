@@ -20,9 +20,10 @@ class EmergencyPage(ctk.CTkFrame):
         self.controller = controller
         ctk.CTkLabel(self, text="🚨 Emergency Contact Page", font=ctk.CTkFont(size=18)).pack(pady=40)
 
+# == Actual Home Page == #
 class Main(ctk.CTkFrame):
     def __init__(self, master, controller):
-        super().__init__(master)
+        super().__init__(master, fg_color = "white")
         self.controller = controller
         self.setup_gui()
     
@@ -87,7 +88,7 @@ class Main(ctk.CTkFrame):
         menu_button.pack()    
 
 
-# === Patient Pages === #
+# == Reference Page == #
 class Home_patPage(ctk.CTkFrame):
     def show_internal_page(self, page_name):
             for page in self.pages.values():

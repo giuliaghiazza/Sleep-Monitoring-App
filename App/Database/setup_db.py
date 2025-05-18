@@ -5,9 +5,11 @@ c=connection.cursor()
 c.execute("""DROP TABLE Users;""")
 c.execute("""DROP TABLE Patients;""")
 c.execute("""DROP TABLE Doctors;""")
+c.execute("""DROP TABLE Technicians;""")
+c.execute("""DROP TABLE Appointments;""")
 
 c.execute("""CREATE TABLE IF NOT EXISTS Users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     username VARCHAR(255) UNIQUE NOT NULL,
     psw VARCHAR(50) NOT NULL,
     role VARCHAR(50) NOT NULL
@@ -15,8 +17,9 @@ c.execute("""CREATE TABLE IF NOT EXISTS Users (
     )
 
 c.execute("""CREATE TABLE IF NOT EXISTS Patients(
-          user_id INT PRIMARY KEY,          
+          user_id INTEGER PRIMARY KEY,          
           Name VARCHAR(30),
+          Surname VARCHAR(30) NOT NULL,
           Codice_Fiscale CHAR(16),
           DoB DATE,
           Age INTEGER CHECK(Age>=0),
@@ -30,8 +33,9 @@ c.execute("""CREATE TABLE IF NOT EXISTS Patients(
           """)
 
 c.execute("""CREATE TABLE IF NOT EXISTS Doctors(
-          user_id INT PRIMARY KEY,
+          user_id INTEGER PRIMARY KEY,
           Name VARCHAR(30) NOT NULL,
+          Surname VARCHAR(30) NOT NULL,
           Codice_Fiscale CHAR(16) NOT NULL,
           DoB DATE,
           Age INTEGER CHECK(Age>=0),
@@ -42,13 +46,33 @@ c.execute("""CREATE TABLE IF NOT EXISTS Doctors(
 #Unit: in which he works in the hospital
 
 c.execute("""CREATE TABLE IF NOT EXISTS Technicians(
-          user_id INT PRIMARY KEY,
+          user_id INTEGER PRIMARY KEY,
           Name VARCHAR(30) NOT NULL,
+          Surname VARCHAR(30) NOT NULL,
           Codice_Fiscale CHAR(16) NOT NULL,
           DoB DATE,
           Age INTEGER CHECK(Age>=0),
           Unit VARCHAR(30),
           FOREIGN KEY (user_id) REFERENCES users(user_id)
+          )
+          """)
+
+
+c.execute("""CREATE TABLE IF NOT EXISTS Appointments(
+          appointment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          slot_tempo DATETIME,
+          doctor INTEGER,
+          patient INTEGER,
+          visit_type INTEGER,
+          FOREIGN KEY (doctor) REFERENCES Doctors(user_id),
+          FOREIGN KEY (patient) REFERENCES Patients(user_id)
+          )
+          """)
+
+c.execute("""CREATE TABLE IF NOT EXISTS Visits(
+          visit_code INTEGER PRIMARY KEY AUTOINCREMENT,
+          Visit VARCHAR(25),
+          Unit VARCHAR(30)
           )
           """)
 
@@ -76,31 +100,6 @@ c.execute("""CREATE TABLE IF NOT EXISTS Indexes(
           """)
 #Latency rispetto a picco precedente, se poi servono altri tipi di indicatori potremo aggiungerne
 #Status: U=unavailable, A=available, M=maintnence
-
-c.execute("""
-    INSERT INTO users (username, psw, role)
-    VALUES (?, ?, ?)
-""", ('Pippo', 'Franco', 'P'))
-
-user_id = c.lastrowid  # This is the key line
-
-c.execute("""
-    INSERT INTO patients (Name, user_id)
-    VALUES (?, ?)
-""", ('Pippo', user_id))
-
-
-c.execute("""
-    INSERT INTO users(username, psw, role)
-    VALUES (?, ?, ?)
-""",  ('Gianna','Bianchi', 'D'))
-
-user_id = c.lastrowid  # This is the key line
-
-c.execute("""
-    INSERT INTO Doctors(Name, Codice_Fiscale, user_id)
-    VALUES (?, ?, ?)
-""", ('gianna', 'GHZGLI02R47D969Q', user_id))
 
 #confermo cambiamenti effettuati
 connection.commit()

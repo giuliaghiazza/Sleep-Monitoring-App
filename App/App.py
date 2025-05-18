@@ -83,8 +83,8 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
 
     #Query database
     def login_callback(self):
-        user= (self.user_entry.get(),)
-        pw= self.pass_entry.get()
+        user = (self.user_entry.get(),)
+        pw = self.pass_entry.get()
 
         self.cursor.execute('SELECT username FROM Users WHERE username=?', user)
         result = self.cursor.fetchone()[0]
@@ -97,12 +97,14 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
                 #self.outcome_lable.configure(text_color='green')                           #se lo sto mandando ad un altra pagina non penso serva far vedere sta roba
                 self.cursor.execute('SELECT role FROM Users WHERE username=?', user)
                 role = self.cursor.fetchone()[0]
+                self.cursor.execute('SELECT user_id FROM Users WHERE username=?', user)
+                user_id = self.cursor.fetchone()[0]
                 if role=='D':
-                    self.controller.show_page("home_doc")
+                    self.controller.show_page("home_doc", user_id=user_id)
                 elif role=='T':
-                    self.controller.show_page("home_tec")
+                    self.controller.show_page("home_tec", user_id=user_id)
                 elif role=='P':
-                    self.controller.show_page("home_pat")
+                    self.controller.show_page("home_pat", user_id=user_id)
             else:
                 self.outcome_label.configure(text='Password incorrect')
                 self.outcome_label.configure(text_color='red')
@@ -276,15 +278,31 @@ class SigninPage(ctk.CTkFrame):
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (user, pw, name, surname, dob, age, cob, cor, cap))
         self.controller.show_page("log")
-
+ 
 
 # === Page Classes ===
 
 class App():
-    def show_page(self, page_name):
-            for page in self.pages.values():
-                page.grid_forget()
-            self.pages[page_name].grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
+    def show_page(self, page_name, user_id = None):
+    # Remove existing page if we're re-creating it with user_id
+        if user_id is not None and page_name not in self.pages:
+            if page_name == "home_doc":
+                self.pages[page_name] = Home_docPage(self.root, self, user_id)
+            elif page_name == "home_pat":
+                self.pages[page_name] = Home_patPage(self.root, self, user_id)
+            elif page_name == "home_tec":
+                self.pages[page_name] = Home_tecPage(self.root, self, user_id)
+
+        for page in self.pages.values():
+            page.grid_forget()
+
+        # Create page with user_id if neede
+        page = self.pages.get(page_name)
+
+        if hasattr(page, "receive_user_id"):
+            page.receive_user_id(user_id)
+
+        page.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
 
     def __init__(self):      # When launching the app
         self.conn = sqlite3.connect('App/Database/gui_database.db')
@@ -297,14 +315,11 @@ class App():
         self.root.geometry('360x520')
         self.root.resizable(False, False)
         self.root.grid_columnconfigure(0, weight=1)
-
+        
         # === Pages Dictionary === #
         self.pages = {
-            "home_pat": Home_patPage(self.root, self),
             "log": LoginPage(self.root, self),
             "Sign-in": SigninPage(self.root, self),
-            "home_doc": Home_docPage(self.root, self),
-            "home_tec": Home_tecPage(self.root, self),
         }
 
         self.show_page("log")   #prima era home, se non funziona torno qua
