@@ -61,6 +61,8 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
             text="Log-in",     #da aggiungere icona se vogliamo metterne una
             height=50,
             width=120,
+            fg_color="#38a3a5",
+            hover_color="#57cc99",
             font=ctk.CTkFont(size=16),
             command=self.login_callback
         )
@@ -71,6 +73,8 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
             text="Sign-in",     #da aggiungere icona se vogliamo metterne una
             height=50,
             width=120,
+            fg_color="#38a3a5",
+            hover_color="#57cc99",
             font=ctk.CTkFont(size=16),
             command=lambda: self.controller.show_page("Sign-in")
         )
@@ -140,6 +144,8 @@ class SigninPage(ctk.CTkFrame):
             width=60,
             height=30,
             font=ctk.CTkFont(size=14),
+            fg_color="#57c2a8",
+            hover_color="#034172",
             command= lambda: self.controller.show_page("log")
         )
         back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")

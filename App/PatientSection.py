@@ -12,27 +12,46 @@ class Main(ctk.CTkFrame):
         super().__init__(master, fg_color="white")
         self.controller = controller
         self.user_id = user_id
-        self.setup_gui()
+        self.setup_gui(user_id)
+        self.conn = sqlite3.connect('App/Database/gui_database.db')
+        self.cursor = self.conn.cursor()
 
-    def setup_gui(self): 
+    def setup_gui(self, user_id): 
+        self.appointments_container = self
+
         # === Header Title ===
-        title_label = ctk.CTkLabel(self, text="Welcome, John", font=ctk.CTkFont(size=22, weight="bold"))
+        title_label = ctk.CTkLabel(self, text="Welcome, John!", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=0, pady=(20, 10))
 
         # === Profile Picture ===
         try:
-           profile_img = ctk.CTkImage(light_image=Image.open("patientprofile.png"), size=(80, 80))
+           profile_img = ctk.CTkImage(light_image=Image.open("App/patientprofile.png"), size=(80, 80))
            profile_pic = ctk.CTkLabel(self, image=profile_img, text="")
            profile_pic.grid(row=1, column=0, pady=(0, 20))
         except:
            pass
 
         # === Buttons ===
+
+        book_button = ctk.CTkButton(
+            master=self,
+            text="📅 Your Appointments",
+            height=50,
+            width=250,
+            fg_color="#57cc99",
+            hover_color="#38a3a5",
+            font=ctk.CTkFont(size=16),
+            command=lambda: self.show_appointments(user_id)
+        )
+        book_button.grid(row=2, column=1, padx=35, pady=10, sticky="ew")
+
         book_button = ctk.CTkButton(
             master=self,
             text="📅 Book Appointment",
             height=50,
             width=250,
+            fg_color="#38a3a5",
+            hover_color="#57cc99",
             font=ctk.CTkFont(size=16),
             command=lambda: self.controller.show_internal_page("appointment")
         )
@@ -43,6 +62,8 @@ class Main(ctk.CTkFrame):
             text="📂 My Health Records",
             height=50,
             width=250,
+            fg_color="#38a3a5",
+            hover_color="#57cc99",
             font=ctk.CTkFont(size=16),
             command=lambda: self.controller.show_internal_page("data")
         )
@@ -69,10 +90,60 @@ class Main(ctk.CTkFrame):
             text="☰ Menu",
             width=100,
             height=35,
+            fg_color="#57cc99",
+            hover_color="#38a3a5",
             font=ctk.CTkFont(size=14),
             command=lambda: print("Menu opened")
         )
         menu_button.pack()    
+    
+    def show_appointments(self, user_id):
+
+        query = f"""
+            SELECT 
+                A.slot_tempo, 
+                A.visit_type,
+                A.appointment_id,
+                D.Name,
+                D.Surname
+            FROM Appointments A
+            JOIN Doctors D ON A.doctor = D.user_id
+            JOIN Patients P ON A.patient = P.user_id
+            WHERE P.user_id = ?
+            """
+
+        self.cursor.execute(query, (user_id,))
+        appointments = self.cursor.fetchall()
+
+        if not appointments:
+            ctk.CTkLabel(self.appointments_container, text= "There are no appointments scheduled!", text_color="#999").grid(row=3, column=0, columnspan=3, pady=20)
+            return
+
+        row = 3
+        for appointment in appointments:
+            time_str = appointment[0].split(' ')[1][:5]
+            visit_type = appointment[1]
+            self.cursor.execute("SELECT Visit FROM Visits WHERE visit_code = ?", (visit_type,))
+            visit_name = self.cursor.fetchone()
+            visit_name_str = visit_name[0] if visit_name else "Unknown"
+            doctor_name = f"{appointment[3]} {appointment[4]}"
+            appointment_id = appointment[2]
+
+            apt_button = ctk.CTkButton(
+                self.appointments_container,
+                text=f"{time_str} 🕒 | {doctor_name} | {visit_name_str}",
+                width=320,
+                height=40,
+                font=ctk.CTkFont(size=14),
+                corner_radius=10,
+                fg_color= "#FFE5B4",
+                hover_color= "#FFD6A5",
+                text_color="#222",
+                command=lambda vt=appointment_id: self.controller.show_internal_page("visit_details", vt)
+            )
+            apt_button.grid(row=row, column=1, columnspan=3, pady=5)
+            row += 1
+
 
 class AppointmentPage(ctk.CTkFrame):
     def __init__(self, master, controller, user_id):
@@ -81,7 +152,21 @@ class AppointmentPage(ctk.CTkFrame):
         self.user_id = user_id
         self.setup_gui(self.user_id)
 
-    def setup_gui(self, user_id): 
+    def setup_gui(self, user_id):
+        self.grid_columnconfigure(0, weight=0)  # Back button column
+        self.grid_columnconfigure(1, weight=1)  # Main content column
+        
+        # === Back Button in Top-Left ===
+        back_button = ctk.CTkButton(
+            master = self,
+            text="← Back",
+            width=60,
+            height=30,
+            font=ctk.CTkFont(size=14),
+            command= lambda: self.controller.show_internal_page("main")
+        )
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+    
         # === Header Title ===
         title_label = ctk.CTkLabel(self, text="📅 Book Appointment Page", font=ctk.CTkFont(size=18))
         title_label.grid(row=0, column=0, pady=(20, 10))

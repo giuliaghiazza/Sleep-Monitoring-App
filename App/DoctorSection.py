@@ -8,21 +8,71 @@ class VisitDetails(ctk.CTkFrame):
         super().__init__(master, fg_color="white")
         self.user_id = user_id
         self.controller = controller
-        self.visitgui()
+        self.conn = sqlite3.connect('App/Database/gui_database.db')
+        self.cursor = self.conn.cursor()
 
-    def visitgui(self):
-        title_label = ctk.CTkLabel(self, text="🩺 Visit Details", font=ctk.CTkFont(size=22, weight="bold"))
-        title_label.grid(row=0, column=0, pady=(20, 10))
+        # Scrollable frame for appointments
+        scrollable_frame = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
+        scrollable_frame.pack(pady=20, padx=10, fill="both", expand=True)
+        scrollable_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        self.visitgui(scrollable_frame)
+
+    def visitgui(self, parent):
+        parent.grid_columnconfigure(0, weight=0)  # Back button column
+        parent.grid_columnconfigure(1, weight=1)  # Main content column
+
+        title_label = ctk.CTkLabel(parent, text="🩺 Visit Details", font=ctk.CTkFont(size=22, weight="bold"))
+        title_label.grid(row=0, column=1, pady=(20, 10))
+
+        # === Back Button in Top-Left ===
+        back_button = ctk.CTkButton(
+            master=parent,
+            text="← Back",
+            width=60,
+            height=30,
+            font=ctk.CTkFont(size=14),
+            fg_color="#57c2a8",
+            hover_color="#034172",
+            command= lambda: self.controller.show__internal_page("main")
+        )
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
 
 class Manage(ctk.CTkFrame):
     def __init__(self, master, controller, user_id):
         super().__init__(master, fg_color="white")
         self.user_id = user_id
         self.controller = controller
-        self.visitgui()
+        self.conn = sqlite3.connect('App/Database/gui_database.db')
+        self.cursor = self.conn.cursor()
 
-    def visitgui(self):
-        title_label = ctk.CTkLabel(self, text="🛠 Manage Page", font=ctk.CTkFont(size=22, weight="bold"))
+        # Scrollable frame for appointments
+        scrollable_frame = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
+        scrollable_frame.pack(pady=20, padx=10, fill="both", expand=True)
+        scrollable_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        self.managegui(scrollable_frame)
+
+    def managegui(self, parent):
+        title_label = ctk.CTkLabel(parent, text="🛠 Manage Page", font=ctk.CTkFont(size=22, weight="bold"))
+        title_label.grid(row=0, column=1, pady=(20, 10))
+
+        parent.grid_columnconfigure(0, weight=0)  # Back button column
+        parent.grid_columnconfigure(1, weight=1)  # Main content column
+
+        # === Back Button in Top-Left ===
+        back_button = ctk.CTkButton(
+            master=parent,
+            text="← Back",
+            width=60,
+            height=30,
+            font=ctk.CTkFont(size=14),
+            fg_color="#57c2a8",
+            hover_color="#034172",
+            command= lambda: self.controller.show_internal_page("main")
+        )
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+        title_label = ctk.CTkLabel(parent, text="🩺 Visit Details", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=0, pady=(20, 10))
 
 
@@ -61,8 +111,8 @@ class Main(ctk.CTkFrame):
             "height": 45,
             "corner_radius": 3,
             "font": ctk.CTkFont(size=15),
-            "hover_color" :"#D0F0EC",
-            "fg_color":"#90C9B7",
+            "hover_color" :"#57cc99",
+            "fg_color":"#38a3a5",
             "text_color": "#333"
         }
 
@@ -82,8 +132,8 @@ class Main(ctk.CTkFrame):
             text="🛠 Manage Appointments",
             width=180,
             corner_radius=10,
-            fg_color="#D0F0EC",
-            hover_color="#90C9B7",
+            fg_color="#57cc99",
+            hover_color="#38a3a5",
             text_color="black",
             font=ctk.CTkFont(size=14),
             command=lambda: self.controller.show_internal_page("manage")
@@ -97,6 +147,8 @@ class Main(ctk.CTkFrame):
         search_button = ctk.CTkButton(
             parent, 
             text="Search patient name...", 
+            fg_color="#57cc99",
+            hover_color="#38a3a5",
             command=lambda: self.show_appointments("search", user_id, self.search_var.get())
         )
         search_button.grid(row=1001, column=2, pady=(5, 10), padx=5, sticky="w")
