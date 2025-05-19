@@ -3,88 +3,133 @@ from PIL import Image
 import sqlite3
 import datetime
 
-
 class VisitDetails(ctk.CTkFrame):
-    def __init__(self, master,controller, user_id):
-        super().__init__(master)
+    def __init__(self, master, controller, user_id):
+        super().__init__(master, fg_color="white")
+        self.user_id = user_id
         self.controller = controller
         self.visitgui()
 
     def visitgui(self):
-        # === Header Title ===
-        title_label = ctk.CTkLabel(self, text="Welcome tecnician", font=ctk.CTkFont(size=22, weight="bold"))
+        title_label = ctk.CTkLabel(self, text="🩺 Visit Details", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=0, pady=(20, 10))
 
-class AppointmentPage(ctk.CTkFrame):
-    def __init__(self, master, controller, user_id = None):
+
+class Manage(ctk.CTkFrame):
+    def __init__(self, master, controller, user_id):
+        super().__init__(master, fg_color="white")
+        self.user_id = user_id
+        self.controller = controller
+        self.visitgui()
+
+    def visitgui(self):
+        title_label = ctk.CTkLabel(self, text="🛠 Manage Page", font=ctk.CTkFont(size=22, weight="bold"))
+        title_label.grid(row=0, column=0, pady=(20, 10))
+
+
+class Main(ctk.CTkFrame):   
+    def __init__(self, master, controller, user_id=None):
         super().__init__(master, fg_color="white")
         self.controller = controller
         self.conn = sqlite3.connect('App/Database/gui_database.db')
         self.cursor = self.conn.cursor()
+
+        # Scrollable frame for appointments
         scrollable_frame = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
-        scrollable_frame.pack(pady=20, padx=5, fill="both", expand=True)
+        scrollable_frame.pack(pady=20, padx=10, fill="both", expand=True)
+        scrollable_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
         self.Appointment_doc_gui(scrollable_frame, user_id)
-        
+
     def Appointment_doc_gui(self, parent, user_id):
         self.appointments_container = parent
-        # === Header Title === #
-        title_label = ctk.CTkLabel(parent, text="Your Appointments", font=ctk.CTkFont(size=22, weight="bold"))
-        title_label.grid(row=0, column=0, columnspan=3, pady=(5, 10))
+        parent.grid_columnconfigure((0, 1, 2), weight=1)
 
-        title_label = ctk.CTkLabel(parent, text="🌞 Today Appointments", font=ctk.CTkFont(size=15, weight="bold"))
-        title_label.grid(row=1, column=0, columnspan=3, pady=(5, 10))
+        # === Header & Profile ===
+        ctk.CTkLabel(parent, text="Welcome, Doctor!", font=ctk.CTkFont(size=20, weight="bold")).grid(row=0, column=1, columnspan=2, pady=(20, 5), sticky="w")
+        
+        try:
+            profile_img = ctk.CTkImage(light_image=Image.open("App/doctorprofile.png"), size=(50, 50))
+            profile_pic = ctk.CTkLabel(parent, image=profile_img, text="")
+            profile_pic.grid(row=0, column=0, pady=(20, 10), sticky="e")
+        except:
+            pass
 
-        book_button = ctk.CTkButton(
-            master=parent,
-            text="Morning",
-            height=50,
-            width=90,
-            font=ctk.CTkFont(size=16),
-            command=lambda: self.show_appointments("morning", user_id)
+        ctk.CTkLabel(parent, text="Your Appointments 🌞", font=ctk.CTkFont(size=22, weight="bold")).grid(row=1, column=0, columnspan=3, pady=(10, 10))
+
+        # === Search Entry ===
+        self.search_var = ctk.StringVar()
+        search_entry = ctk.CTkEntry(parent, placeholder_text="Search patient name...", textvariable=self.search_var, width=250)
+        search_entry.grid(row=2, column=0, columnspan=2, pady=(5, 10), padx=5, sticky="w")
+
+        search_button = ctk.CTkButton(
+            parent, 
+            text="Search", 
+            command=lambda: self.show_appointments("search", user_id, self.search_var.get())
         )
-        book_button.grid(row=2, column=0, padx=5, pady=10, sticky="w")
+        search_button.grid(row=2, column=2, pady=(5, 10), padx=5, sticky="e")
 
-        book_button = ctk.CTkButton(
-            master=parent,
-            text="Afternoon",
-            height=50,
-            width=90,
-            font=ctk.CTkFont(size=16),
-            command=lambda: self.show_appointments("afternoon", user_id)
-        )
-        book_button.grid(row=2, column=1, padx=5, pady=10, sticky="w")
+        # === Filter Buttons ===
+        button_config = {
+            "height": 45,
+            "corner_radius": 12,
+            "font": ctk.CTkFont(size=15),
+            "hover_color" :"#D0F0EC",
+            "fg_color":"#90C9B7",
+            "text_color": "#333"
+        }
 
-        book_button = ctk.CTkButton(
-            master=parent,
-            text="All",
-            height=50,
-            width=90,
-            font=ctk.CTkFont(size=16),
-            command=lambda: self.show_appointments("all", user_id)
-        )
-        book_button.grid(row=2, column=2, padx=5, pady=10, sticky="w")
-    
-    def show_appointments(self, time_slot, user_id):
+        filters = [("Today", "today"), ("Tomorrow", "tomorrow"), ("All", "all")]
+        for i, (text, key) in enumerate(filters):
+            ctk.CTkButton(
+                master=parent,
+                text=text,
+                command=lambda k=key: self.show_appointments(k, user_id),
+                **button_config
+            ).grid(row=3, column=i, padx=5, pady=10)
+
+        # Persistent Manage Button (row=1000 to stay always at bottom)
+        ctk.CTkButton(
+            self.appointments_container,
+            text="🛠 Manage Appointments",
+            width=180,
+            corner_radius=10,
+            fg_color="#D0F0EC",
+            hover_color="#90C9B7",
+            text_color="black",
+            font=ctk.CTkFont(size=14),
+            command=lambda: self.controller.show_internal_page("manage")
+        ).grid(row=1000, column=0, columnspan=3, pady=(30, 10))
+
+
+    def show_appointments(self, time_slot, user_id, patient_name = None):
         for widget in self.appointments_container.winfo_children():
             grid_info = widget.grid_info()
-            if grid_info and int(grid_info.get("row", 0)) > 2:
+            if 4 <= int(grid_info.get("row", 0)) < 500:
                 widget.destroy()
 
-        today_str = "2025-05-17"
+        # Filter logic
+        params = []
+        where_clauses = []
 
-        # Define the time filter condition based on time_slot
-        time_condition = ""
-        if time_slot == "morning":
-            time_condition = "AND time(A.slot_tempo) < '12:00:00'"
-            no_appointments_text = "No morning appointments today"
-        elif time_slot == "afternoon":
-            time_condition = "AND time(A.slot_tempo) >= '12:00:00'"
-            no_appointments_text = "No afternoon appointments today"
-        else:  # all
-            time_condition = ""
-            no_appointments_text = "No appointments today"
+        if time_slot in ["today", "tomorrow"]:
+            today_str = "2025-05-17" if time_slot == "today" else "2025-05-18"
+            where_clauses.append("date(A.slot_tempo) = ?")
+            params.append(today_str)
+            no_appointments_text = f"No {time_slot} appointments 💤"
+        else:
+            no_appointments_text = "No appointments available 💤"
 
-        # Prepare the SQL query with the time condition
+        where_clauses.append("A.doctor = ?")
+        params.append(user_id)
+
+        time_condition = "WHERE " + " AND ".join(where_clauses)
+
+        if patient_name:
+            where_clauses.append("(P.Name LIKE ? OR P.Surname LIKE ?)")
+            name_filter = f"%{patient_name,}%"
+            params.extend([name_filter, name_filter])
+
         query = f"""
             SELECT 
                 A.slot_tempo, 
@@ -94,127 +139,60 @@ class AppointmentPage(ctk.CTkFrame):
                 A.appointment_id
             FROM Appointments A
             JOIN Patients P ON A.patient = P.user_id
-            WHERE date(A.slot_tempo) = ?
             {time_condition}
-            AND A.doctor = ?
         """
 
-        self.cursor.execute(query, (today_str, user_id))
+        self.cursor.execute(query, tuple(params))
         appointments = self.cursor.fetchall()
 
         if not appointments:
-            no_apt_label = ctk.CTkLabel(self.appointments_container, text=no_appointments_text)
-            no_apt_label.grid(row=3, column=0, columnspan=3, pady=20)
+            ctk.CTkLabel(self.appointments_container, text=no_appointments_text, text_color="#999").grid(row=3, column=0, columnspan=3, pady=20)
             return
 
-        row = 3
+        row = 4
         for appointment in appointments:
             time_str = appointment[0].split(' ')[1][:5]
             visit_type = appointment[1]
-            self.cursor.execute("""SELECT Visit FROM Visits WHERE visit_code = ?""", (visit_type,))
+            self.cursor.execute("SELECT Visit FROM Visits WHERE visit_code = ?", (visit_type,))
             visit_name = self.cursor.fetchone()
             visit_name_str = visit_name[0] if visit_name else "Unknown"
             patient_name = f"{appointment[2]} {appointment[3]}"
             appointment_id = appointment[4]
-            
-            button_text = f"{time_str} | {patient_name} | {visit_name_str}"
 
             apt_button = ctk.CTkButton(
                 self.appointments_container,
-                text=button_text,
-                width=300,
+                text=f"{time_str} 🕒 | {patient_name} | {visit_name_str}",
+                width=320,
+                height=40,
+                font=ctk.CTkFont(size=14),
+                corner_radius=10,
+                fg_color= "#FFE5B4",
+                hover_color= "#FFD6A5",
+                text_color="#222",
                 command=lambda vt=appointment_id: self.controller.show_internal_page("visit_details", vt)
             )
             apt_button.grid(row=row, column=0, columnspan=3, pady=5)
             row += 1
 
-        
 
-class Documents(ctk.CTkFrame):
-    def __init__(self, master, controller, user_id = None):
-        super().__init__(master, fg_color="white")
-        self.controller = controller
-        self.documents_doc_gui()
-        
-    def documents_doc_gui(self):
-        # === Header Title ===
-        title_label = ctk.CTkLabel(self, text="Your Appointments", font=ctk.CTkFont(size=22, weight="bold"))
-        title_label.grid(row=0, column=0, pady=(20, 10))
-
-
-# == Actual Home Page == #
-class Main(ctk.CTkFrame):   
-    def __init__(self, master,controller):
-        super().__init__(master, fg_color = "white")
-        self.controller = controller
-        self.home_doc_gui()
-
-    def home_doc_gui(self):
-        # === Header Title ===
-        title_label = ctk.CTkLabel(self, text="Welcome Doctor", font=ctk.CTkFont(size=22, weight="bold"))
-        title_label.grid(row=0, column=0, pady=(20, 10))
-
-        # === Profile Picture ===
-        try:
-            profile_img = ctk.CTkImage(light_image=Image.open("App/doctorprofile.png"), size=(150, 150))
-            profile_pic = ctk.CTkLabel(self, image=profile_img, text="")
-            profile_pic.grid(row=1, column=0, pady=(0, 20))
-        except:
-            pass
-
-        # === Buttons ===
-        book_button = ctk.CTkButton(
-            master=self,
-            text="📅 Appointment List",
-            height=50,
-            width=250,
-            font=ctk.CTkFont(size=16),
-            command=lambda: self.controller.show_internal_page("appointment")
-        )
-        book_button.grid(row=2, column=0, padx=35, pady=10, sticky="ew")
-
-        data_button = ctk.CTkButton(
-            master=self,
-            text="📂 My Documents",
-            height=50,
-            width=250,
-            font=ctk.CTkFont(size=16),
-            command=lambda: self.controller.show_internal_page("data")
-        )
-        data_button.grid(row=3, column=0, padx=35, pady=10, sticky="ew")
-
-        # === Bottom Menu ===
-        menu_bar = ctk.CTkFrame(self, fg_color="transparent")
-        menu_bar.grid(row=5, column=0, pady=20)
-
-        menu_button = ctk.CTkButton(
-            master=menu_bar,
-            text="☰ Menu",
-            width=100,
-            height=35,
-            font=ctk.CTkFont(size=14),
-            command=lambda: print("Menu opened")
-        )
-        menu_button.pack()    
-
-# == Reference Page == #
+# === Main Page Controller ===
 class Home_docPage(ctk.CTkFrame):
     def __init__(self, master, controller, user_id):
         super().__init__(master, fg_color="white")
         self.master = master
         self.controller = controller
         self.user_id = user_id
-        print(user_id)
-        self.pages = {}  # Don't initialize sub-pages yet
 
-        self.pages["main"] = Main(self, self)
-        self.pages["appointment"] = AppointmentPage(self, self, self.user_id)
-        self.pages["data"] = Documents(self, self, self.user_id)
+        self.pages = {}
+        self.grid_columnconfigure(0, weight=1)
+
+        self.pages["main"] = Main(self, self, self.user_id)
+        self.pages["manage"] = Manage(self, self, self.user_id)
         self.pages["visit_details"] = VisitDetails(self, self, self.user_id)
 
         self.show_internal_page("main")
 
-    def show_internal_page(self, page_name):
+    def show_internal_page(self, page_name, *args):
         for page in self.pages.values():
             page.grid_forget()
-        self.pages[page_name].grid(row=0, column=0, padx=5, pady=10, sticky="nsew")
+        self.pages[page_name].grid(row=0, column=0, padx=10, pady=10, sticky="nsew")

@@ -18,7 +18,10 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
         self.controller = controller
         self.conn = sqlite3.connect('App/Database/gui_database.db')   #c'è un modo migliore per connettere la classe alle funzioni in Root ma non lo trovo
         self.cursor = self.conn.cursor()
+        self.grid_columnconfigure(0, weight=1)
+
         self.login_gui()
+        
 
     def login_gui(self):
         # === Header Title ===
@@ -61,7 +64,7 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
             font=ctk.CTkFont(size=16),
             command=self.login_callback
         )
-        login_button.grid(row=4, column=0, padx=35, pady=10, sticky="ew")    #numeri da rivedere
+        login_button.grid(row=4, column=0, padx=35, pady=10)    #numeri da rivedere
 
         signin_button = ctk.CTkButton(
             master=self,
@@ -71,7 +74,7 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
             font=ctk.CTkFont(size=16),
             command=lambda: self.controller.show_page("Sign-in")
         )
-        signin_button.grid(row=5, column=0, padx=35, pady=10, sticky="ew")    #numeri da rivedere, posso fare così per affiancare 2 bottoni?
+        signin_button.grid(row=5, column=0, padx=35, pady=10)    #numeri da rivedere, posso fare così per affiancare 2 bottoni?
 
         # === Outcome Label ===
         self.outcome_label=ctk.CTkLabel(self,
@@ -79,12 +82,14 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
                                         font=('Arial',12),
                                         width=300,
                                         height=30)      #larghezza come finestra se so che non ho altro sulla riga
-        self.outcome_label.grid(row=6, column=0, padx=35, pady=10, sticky="ew")
+        self.outcome_label.grid(row=6, column=0, padx=35, pady=10)
 
     #Query database
     def login_callback(self):
         user = (self.user_entry.get(),)
         pw = self.pass_entry.get()
+
+        self.grid_columnconfigure(0, weight=1)
 
         self.cursor.execute('SELECT username FROM Users WHERE username=?', user)
         result = self.cursor.fetchone()[0]
@@ -114,18 +119,37 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
 
 class SigninPage(ctk.CTkFrame):
     def __init__(self, master, controller):
-        super().__init__(master)
+        super().__init__(master, fg_color="white")
         self.controller = controller
         self.conn = sqlite3.connect('gui_database.db')
         self.cursor = self.conn.cursor()
-        scrollable_frame = ctk.CTkScrollableFrame(self, width=360, height=520)
+        scrollable_frame = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
         scrollable_frame.pack(pady=20, padx=20, fill="both", expand=True)
+        scrollable_frame.grid_columnconfigure(0, weight=0)
+
         self.signin_gui(scrollable_frame)
 
     def signin_gui(self, parent):
+        parent.grid_columnconfigure(0, weight=0)  # Back button column
+        parent.grid_columnconfigure(1, weight=1)  # Main content column
+
+        # === Back Button in Top-Left ===
+        back_button = ctk.CTkButton(
+            master=parent,
+            text="← Back",
+            width=60,
+            height=30,
+            font=ctk.CTkFont(size=14),
+            command= lambda: self.controller.show_page("log")
+        )
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+
         # === Header Title ===
-        title_label = ctk.CTkLabel(parent, text="Sign In", font=ctk.CTkFont(size=22, weight="bold"))
-        title_label.grid(row=0, column=0, pady=(20, 10))
+        title_label = ctk.CTkLabel(
+            parent, text="Sign In",
+            font=ctk.CTkFont(size=22, weight="bold")
+        )
+        title_label.grid(row=0, column=1, pady=(20, 10), sticky="w")
 
         # === Labels ===
         User_lable=ctk.CTkLabel(parent, 
@@ -229,7 +253,7 @@ class SigninPage(ctk.CTkFrame):
             font=ctk.CTkFont(size=16),
             command=self.signin_callback
             )
-        signin_button.grid(row=13, column=0, padx=115, pady=10, sticky="ew")
+        signin_button.grid(row=13, column=0, padx=115, pady=10)
 
         # === Outcome Label ===
         self.outcome_label=ctk.CTkLabel(parent,
@@ -237,7 +261,7 @@ class SigninPage(ctk.CTkFrame):
                                         font=('Arial',12),
                                         width=300,
                                         height=30)
-        self.outcome_label.grid(row=12, column=0, padx=35, pady=10, sticky="ew")
+        self.outcome_label.grid(row=12, column=0, padx=35, pady=10)
     
     def signin_callback(self):
         user= self.user_entry.get()
@@ -312,10 +336,10 @@ class App():
         self.root = ctk.CTk()
         self.root.title('Healthcare Portal')
         self.root.configure(fg_color="white")
-        self.root.geometry('360x520')
+        self.root.geometry('750x550')
         self.root.resizable(False, False)
         self.root.grid_columnconfigure(0, weight=1)
-        
+
         # === Pages Dictionary === #
         self.pages = {
             "log": LoginPage(self.root, self),
