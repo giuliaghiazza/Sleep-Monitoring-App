@@ -28,6 +28,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS Patients(
           City_of_Recidency VARCHAR(20),
           Province_of_Recidency CHAR(2),
           CAP INTEGER,
+          n_booked INTEGER DEFAULT '0',
           FOREIGN KEY (user_id) REFERENCES users(user_id)
           )
           """)
@@ -64,6 +65,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS Appointments(
           doctor INTEGER,
           patient INTEGER,
           visit_type INTEGER,
+          dispo INTEGER DEFAULT '1',
           FOREIGN KEY (doctor) REFERENCES Doctors(user_id),
           FOREIGN KEY (patient) REFERENCES Patients(user_id)
           )
@@ -100,6 +102,21 @@ c.execute("""CREATE TABLE IF NOT EXISTS Indexes(
           """)
 #Latency rispetto a picco precedente, se poi servono altri tipi di indicatori potremo aggiungerne
 #Status: U=unavailable, A=available, M=maintnence
+
+c.execute("""INSERT INTO Appointments(
+          slot_tempo,
+          doctor,
+          patient,
+          dispo)
+          VALUES ('2025-05-17 10:30', 5, 1,'1')
+          """)
+c.execute("""INSERT INTO Appointments(
+          slot_tempo,
+          doctor,
+          patient,
+          dispo)
+          VALUES ('2025-05-18 11:30', 5, 1,'1')
+          """)
 
 #confermo cambiamenti effettuati
 connection.commit()

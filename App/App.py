@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
 import sqlite3
-from PatientSection import Home_patPage, AppointmentPage, HealthDataPage, EmergencyPage
+from PatientSection import Home_patPage
 from DoctorSection import Home_docPage
 from TechnicianSection import Home_tecPage
 

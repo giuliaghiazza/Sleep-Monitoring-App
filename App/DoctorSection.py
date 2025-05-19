@@ -14,7 +14,6 @@ class VisitDetails(ctk.CTkFrame):
         title_label = ctk.CTkLabel(self, text="🩺 Visit Details", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=0, pady=(20, 10))
 
-
 class Manage(ctk.CTkFrame):
     def __init__(self, master, controller, user_id):
         super().__init__(master, fg_color="white")
@@ -57,28 +56,17 @@ class Main(ctk.CTkFrame):
 
         ctk.CTkLabel(parent, text="Your Appointments 🌞", font=ctk.CTkFont(size=22, weight="bold")).grid(row=1, column=0, columnspan=3, pady=(10, 10))
 
-        # === Search Entry ===
-        self.search_var = ctk.StringVar()
-        search_entry = ctk.CTkEntry(parent, placeholder_text="Search patient name...", textvariable=self.search_var, width=250)
-        search_entry.grid(row=2, column=0, columnspan=2, pady=(5, 10), padx=5, sticky="w")
-
-        search_button = ctk.CTkButton(
-            parent, 
-            text="Search", 
-            command=lambda: self.show_appointments("search", user_id, self.search_var.get())
-        )
-        search_button.grid(row=2, column=2, pady=(5, 10), padx=5, sticky="e")
-
         # === Filter Buttons ===
         button_config = {
             "height": 45,
-            "corner_radius": 12,
+            "corner_radius": 3,
             "font": ctk.CTkFont(size=15),
             "hover_color" :"#D0F0EC",
             "fg_color":"#90C9B7",
             "text_color": "#333"
         }
 
+        sticky = ["e", "", "w"]
         filters = [("Today", "today"), ("Tomorrow", "tomorrow"), ("All", "all")]
         for i, (text, key) in enumerate(filters):
             ctk.CTkButton(
@@ -86,7 +74,7 @@ class Main(ctk.CTkFrame):
                 text=text,
                 command=lambda k=key: self.show_appointments(k, user_id),
                 **button_config
-            ).grid(row=3, column=i, padx=5, pady=10)
+            ).grid(row=3, column=i, padx=5, pady=10, sticky = sticky[i])
 
         # Persistent Manage Button (row=1000 to stay always at bottom)
         ctk.CTkButton(
@@ -101,6 +89,17 @@ class Main(ctk.CTkFrame):
             command=lambda: self.controller.show_internal_page("manage")
         ).grid(row=1000, column=0, columnspan=3, pady=(30, 10))
 
+         # === Search Entry ===
+        self.search_var = ctk.StringVar()
+        search_entry = ctk.CTkEntry(parent, placeholder_text="Search patient name...", textvariable=self.search_var, width=250)
+        search_entry.grid(row=1001, column=0, columnspan=2, pady=(5, 10), padx=5, sticky="e")
+
+        search_button = ctk.CTkButton(
+            parent, 
+            text="Search patient name...", 
+            command=lambda: self.show_appointments("search", user_id, self.search_var.get())
+        )
+        search_button.grid(row=1001, column=2, pady=(5, 10), padx=5, sticky="w")
 
     def show_appointments(self, time_slot, user_id, patient_name = None):
         for widget in self.appointments_container.winfo_children():
@@ -182,6 +181,7 @@ class Home_docPage(ctk.CTkFrame):
         self.master = master
         self.controller = controller
         self.user_id = user_id
+
 
         self.pages = {}
         self.grid_columnconfigure(0, weight=1)
