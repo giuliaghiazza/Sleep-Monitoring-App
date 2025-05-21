@@ -234,7 +234,6 @@ class Home_docPage(ctk.CTkFrame):
         self.controller = controller
         self.user_id = user_id
 
-
         self.pages = {}
         self.grid_columnconfigure(0, weight=1)
 

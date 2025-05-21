@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
 import sqlite3
+import datetime
 
 # Dictionary to hold pages
 pages = {}
@@ -98,6 +99,10 @@ class Main(ctk.CTkFrame):
         menu_button.pack()    
     
     def show_appointments(self, user_id):
+        for widget in self.appointments_container.winfo_children():
+            grid_info = widget.grid_info()
+            if 4 <= int(grid_info.get("row", 0)) < 500 and int(grid_info.get("column", 0)) == 1:
+                widget.destroy()
 
         query = f"""
             SELECT 
@@ -143,7 +148,127 @@ class Main(ctk.CTkFrame):
             )
             apt_button.grid(row=row, column=1, columnspan=3, pady=5)
             row += 1
+        
+        if appointments:
+            book_button = ctk.CTkButton(
+                master=self,
+                text="🖊️ Compile your questionnaire!",
+                height=50,
+                width=250,
+                fg_color="#57cc99",
+                hover_color="#38a3a5",
+                font=ctk.CTkFont(size=16),
+                command=lambda: self.controller.show_internal_page("visitquest")
+            )
+            book_button.grid(row = row, column=1, padx=35, pady=0, sticky="ew")
 
+class VisitQuestionnaire(ctk.CTkFrame):
+    def __init__(self, master, controller, user_id):
+        super().__init__(master, fg_color="white")
+        self.controller = controller
+        self.user_id = user_id
+        self.conn = sqlite3.connect('App/Database/gui_database.db')
+        self.cursor = self.conn.cursor()
+
+        self.quest_gui(self.user_id)
+
+
+    def quest_gui(self, user_id):
+
+        self.grid_columnconfigure(0, weight=0)  # Back button column
+        self.grid_columnconfigure(1, weight=1)  # Main content column
+        
+        # === Back Button in Top-Left ===
+        back_button = ctk.CTkButton(
+            master = self,
+            text="← Back",
+            width=60,
+            height=30,
+            font=ctk.CTkFont(size=14),
+            command= lambda: self.controller.show_internal_page("main")
+        )
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+
+        # === Header Title ===
+        title_label = ctk.CTkLabel(self, text="📝 Visit Questionnaire", font=ctk.CTkFont(size=18))
+        title_label.grid(row=0, column=1, pady=(20, 10))
+        
+        self.cursor.execute("""
+            SELECT appointment_id FROM Appointments
+            WHERE patient = ? AND visit_type = 1 AND quest = 0
+            LIMIT 1
+        """, (user_id,))
+        result = self.cursor.fetchone()
+
+        if result:
+            self.appointment_id = result[0]
+            self.build_form()
+        else:
+            title_label = ctk.CTkLabel(self, text="✅ No questionnaire to fill out.", font=ctk.CTkFont(size=16))
+            title_label.grid(row = 1, column=  1, pady= (20,10))
+
+    def build_form(self):
+        title_label = ctk.CTkLabel(self, text="Fill out the questionnaire:.", font=ctk.CTkFont(size=16))
+        title_label.grid(row = 1, column = 1, pady= (20,10))
+        
+        # === Questionnaire Fields ===
+        self.entries = {}
+
+        fields = [
+            ("Pathologies", "pathologies"),
+            ("Medication", "medication"),
+            ("Physical Activity", "physicalactivity"),
+            ("Sleep Hours", "sleephours"),
+            ("Sleep Quality", "sleepquality"),
+            ("Diet", "diet"),
+            ("Tobacco Use", "tobacco"),
+            ("Alcohol Use", "alcohol"),
+            ("Stress Level", "stress"),
+            ("Notes", "notes")
+        ]
+
+        for i, (label, key) in enumerate(fields):
+            ctk.CTkLabel(self, text=label).grid(row=i+1, column=0, sticky="e", padx=10, pady=5)
+            entry = ctk.CTkEntry(self, width=300)
+            entry.grid(row=i+1, column=1, sticky="w", padx=10, pady=5)
+            self.entries[key] = entry
+
+        # === Save Button ===
+        save_button = ctk.CTkButton(self, text="💾 Save", command=self.save_questionnaire)
+        save_button.grid(row=len(fields)+2, column=0, columnspan=2, pady=20)
+
+    def save_questionnaire(self):
+        data = {key: entry.get() for key, entry in self.entries.items()}
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Insert into the database
+        self.cursor.execute("""
+            INSERT INTO VisitQuestionnaire (
+                appointment_id, pathologies, medication, physicalactivity, sleephours,
+                sleepquality, diet, tobacco, alcohol, stress, notes, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            self.appointment_id,
+            data["pathologies"],
+            data["medication"],
+            data["physicalactivity"],
+            data["sleephours"],
+            data["sleepquality"],
+            data["diet"],
+            data["tobacco"],
+            data["alcohol"],
+            data["stress"],
+            data["notes"],
+            created_at
+        ))
+
+        self.cursor.execute("""
+            UPDATE Appointments SET quest = 1 WHERE appointment_id = ?
+        """, (self.appointment_id,))
+        
+        self.conn.commit()
+        ctk.CTkLabel(self, text="✅ Questionnaire saved!", text_color="green").grid(row=100, column=0, columnspan=2, pady=10)
 
 class AppointmentPage(ctk.CTkFrame):
     def __init__(self, master, controller, user_id):
@@ -169,7 +294,7 @@ class AppointmentPage(ctk.CTkFrame):
     
         # === Header Title ===
         title_label = ctk.CTkLabel(self, text="📅 Book Appointment Page", font=ctk.CTkFont(size=18))
-        title_label.grid(row=0, column=0, pady=(20, 10))
+        title_label.grid(row=0, column=1, pady=(20, 10))
         self.conn = sqlite3.connect('App/Database/gui_database.db')
         self.cursor = self.conn.cursor()
         
@@ -868,6 +993,7 @@ class Home_patPage(ctk.CTkFrame):
             "appointment": AppointmentPage(self, self, self.user_id),
             # "data": HealthDataPage(self, self, self.user_id),
             # "emergency": EmergencyPage(self, self, self.user_id),
+            "visitquest": VisitQuestionnaire(self, self, self.user_id)
         }
 
         print(self.user_id)
