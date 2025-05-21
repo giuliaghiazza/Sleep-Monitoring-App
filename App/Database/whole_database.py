@@ -39,9 +39,11 @@ c.execute("""CREATE TABLE IF NOT EXISTS Patients(
           n_booked INTEGER DEFAULT '0',
           Diagnosis varchar,
           Theraphy varchar, 
+          profilepic PATH,
           FOREIGN KEY (user_id) REFERENCES Users(user_id)
           )
           """)
+# All of the profiles pictures should be added to the tables as a filepath
 
 c.execute("""CREATE TABLE IF NOT EXISTS Doctors(
           user_id INTEGER PRIMARY KEY,
@@ -53,17 +55,13 @@ c.execute("""CREATE TABLE IF NOT EXISTS Doctors(
           Age INTEGER CHECK(Age>=0),
           Specialty varchar,
           Unit VARCHAR(30),
+          profilepic PATH,
+          email varchar, -- emergency contact
+          phone integer, -- emergency contact
           FOREIGN KEY (user_id) REFERENCES Users(user_id)
           )
           """)
-
-c.execute("""CREATE TABLE IF NOT EXISTS EmergencyContact(
-          user_id INTEGER PRIMARY KEY,
-          email varchar,
-          phone integer,
-          FOREIGN KEY (user_id) REFERENCES Doctors(user_id)
-          )
-          """) #A system for direct messages could be implemented
+#A system for direct messages could be implemented
 
 c.execute("""CREATE TABLE IF NOT EXISTS Technicians(
           user_id INTEGER PRIMARY KEY,
@@ -73,6 +71,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS Technicians(
           DoB DATE,
           Age INTEGER CHECK(Age>=0),
           Unit VARCHAR(30),
+          profilepic PATH,
           FOREIGN KEY (user_id) REFERENCES users(user_id)
           )
           """)
@@ -104,13 +103,14 @@ c.execute("""CREATE TABLE IF NOT EXISTS Visits(
 # Report and Prescriptions Tables
 
 c.execute("""CREATE TABLE IF NOT EXISTS VisitReport(
-          report_id integer PRIMARY KEY AUTOINCREMENT,
-          appointment_id INTEGER,
+          appointment_id INTEGER PRIMARY KEY,
           file_path path,
           created_at datetime,
           doctor integer,
+          patient integer,
           FOREIGN KEY (appointment_id) REFERENCES Appointments(appointment_id),
-          FOREIGN KEY (doctor) REFERENCES Doctors(user_id)
+          FOREIGN KEY (doctor) REFERENCES Doctors(user_id),
+          FOREIGN KEY (patient) REFERENCES Patients(user_id)
           )
           """)
 
@@ -121,7 +121,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS Prescription(
           doctor integer,
           file_path path,
           created_at datetime,
-          type varchar, 
+          type varchar,
           FOREIGN KEY (appointment_id) REFERENCES Appointments(appointment_id),
           FOREIGN KEY (doctor) REFERENCES Doctors(user_id),
           FOREIGN KEY (patient) REFERENCES Patients(user_id)
@@ -148,7 +148,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS PrescriptionDrugs(
           """)
 
 c.execute("""CREATE TABLE IF NOT EXISTS Therapy(
-          therapy_id integer primary key AUTOINCREMENT, -- maybe not needed
+          therapy_id integer primary key AUTOINCREMENT, 
           patient integer,
           drug1 integer,
           drug2 integer,
@@ -178,16 +178,15 @@ c.execute("""CREATE TABLE IF NOT EXISTS PrescriptionDevices(
 
 c.execute("""CREATE TABLE IF NOT EXISTS Sensors(
           Code_device INTEGER PRIMARY KEY AUTOINCREMENT,
-          PrescriptionDevices_id integer,
           Name VARCHAR(15) NOT NULL,
           Signal_Acquired VARCHAR(15) NOT NULL,
-          availability CHAR(1) CHECK(availability IN('U','A','M')) DEFAULT 'A',
-          sensor_type TEXT,
+          availability CHAR(1) CHECK(availability IN('U','A','M')) DEFAULT 'A'
           model TEXT, 
           description text,
           Status TEXT,
           assigned_at_time DATETIME,
           patient integer,
+          PrescriptionDevices_id integer,
           wharehouse TEXT,
           location TEXT,
           FOREIGN KEY (PrescriptionDevices_id) REFERENCES PrescriptionDevices(PrescriptionDevices_id),
@@ -215,11 +214,11 @@ c.execute("""CREATE TABLE IF NOT EXISTS Sessions(
 c.execute("""CREATE TABLE IF NOT EXISTS Acquisitions(
           Code INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
           Code_device INTEGER NOT NULL,
+          session_id integer,
           patient integer,
           Signal_acquired CHAR(3) CHECK(Signal_acquired IN('ECG','EMG','EEG')) NOT NULL,
-          raw_data BYTEA,
+          raw_data PATH,
           t_acquisition DATETIME NOT NULL,
-          session_id integer,
           Amplitude DECIMAL NOT NULL,
           FOREIGN KEY (Code_device) REFERENCES Sensors(Code_device),          
           FOREIGN KEY (patient) REFERENCES Patients(user_id),
@@ -230,7 +229,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS Acquisitions(
 #durata acquisizione? 
 
 c.execute("""CREATE TABLE IF NOT EXISTS Indexes(
-          session_id INTEGER NOT NULL,
+          Code INTEGER NOT NULL,
           Code_device INTEGER,
           t_acquisition DATETIME,
           Peak_value DECIMAL,
@@ -263,12 +262,24 @@ c.execute("""CREATE TABLE IF NOT EXISTS SensorsReport(
           file_path path,
           created_at DATETIME,
           FOREIGN KEY (patient) REFERENCES Patients(user_id),
-          FOREIGN KEY (snreport_id) REFERENCES SessionsReport(snreport_id)
+          FOREIGN KEY (snreport_id) REFERENCES SessionsReport(ssreport_id)
           )
           """)
 # I could have multiple possible sessions and sensors per report 
-#The id links to a session table with all the considered sessions
+# The id links to a session table with all the considered sessions
 # Each session is linked to different sensors, sessions+sensors are linked to the acquisition
+
+c.execute("""CREATE TABLE IF NOT EXISTS SensorsPerformanceReport(
+          spreport_id integer primary key AUTOINCREMENT,
+          patient integer,  
+          session_id integer,
+          file_path path,
+          created_at DATETIME,
+          warnings integer,
+          FOREIGN KEY (patient) REFERENCES Patients(user_id),
+          FOREIGN KEY (snreport_id) REFERENCES SessionsReport(snreport_id)
+          )
+          """)
 
 # Questionnaire and Diary for patient
 
@@ -305,35 +316,34 @@ c.execute("""CREATE TABLE IF NOT EXISTS VisitQuestionnaire(
           FOREIGN KEY (vquest_id) REFERENCES Appointments(appointment_id) 
           )
           """)
+# Questionnaires should be differentiated for different type of visits
 
-c.execute("""CREATE TABLE IF NOT EXISTS SensorQuestionnaire(
+c.execute("""CREATE TABLE IF NOT EXISTS PeriodicQuestionnaire(
           squest_id integer primary key AUTOINCREMENT,
           patient integer,
-          sensor_id integer, 
-          session_id integer, 
-          created_at DATETIME,
-          malfunction varchar,
+          satisfaction integer, 
+          notes text,
           FOREIGN KEY (patient) REFERENCES Patients(user_id),
           FOREIGN KEY (sensor_id) REFERENCES Sensors(Code_device),
           FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
           )
           """)
 
-c.execute("""CREATE TABLE IF NOT EXISTS PatientDiary(
-          entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
-          patient INT,
-          sensor_id INT, 
-          session_id INT,
-          start_time TIME,
-          end_time TIME,
-          notes TEXT,
-          created_at DATETIME,
-          malfunction varchar,
-          FOREIGN KEY (patient) REFERENCES Patients(user_id),
-          FOREIGN KEY (sensor_id) REFERENCES Sensors(session_id),
-          FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
-          )
-          """)
+# c.execute("""CREATE TABLE IF NOT EXISTS PatientDiary(
+#           entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
+#           patient INT,
+#           sensor_id INT, 
+#           session_id INT,
+#           start_time TIME,
+#           end_time TIME,
+#           notes TEXT,
+#           created_at DATETIME,
+#           malfunction varchar,
+#           FOREIGN KEY (patient) REFERENCES Patients(user_id),
+#           FOREIGN KEY (sensor_id) REFERENCES Sensors(session_id),
+#           FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
+#           )
+#           """)
 
 
 #confermo cambiamenti effettuati

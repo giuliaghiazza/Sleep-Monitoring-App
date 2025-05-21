@@ -73,8 +73,8 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
             text="Sign-in",     #da aggiungere icona se vogliamo metterne una
             height=50,
             width=120,
-            fg_color="#38a3a5",
-            hover_color="#57cc99",
+            fg_color="#57cc99",
+            hover_color="#38a3a5",
             font=ctk.CTkFont(size=16),
             command=lambda: self.controller.show_page("Sign-in")
         )

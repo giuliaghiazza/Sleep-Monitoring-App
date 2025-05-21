@@ -40,5 +40,22 @@ for username, psw, name, surname, codice_fiscale in doctors:
         VALUES (?, ?, ?, ?)
     """, (name, surname, codice_fiscale, user_id))
 
+# List of Technicians: (username, password, Name, Surname, Codice_Fiscale)
+doctors = [
+    ('Luca', 'Gialli', 'Luca', 'Gialli', 'LCAGLL96R47D969Q'),
+    ('Lisa', 'Scotti', 'Lisa', 'Lisa', 'LSASCT84R47D969Q'),
+]
+
+for username, psw, name, surname, codice_fiscale in doctors:
+    c.execute("""
+        INSERT INTO users (username, psw, role)
+        VALUES (?, ?, ?)
+    """, (username, psw, 'T'))
+    user_id = c.lastrowid
+    c.execute("""
+        INSERT INTO Technicians (Name, Surname, Codice_Fiscale, user_id)
+        VALUES (?, ?, ?, ?)
+    """, (name, surname, codice_fiscale, user_id))
+
 connection.commit()
 connection.close()

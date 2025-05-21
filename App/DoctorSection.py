@@ -34,7 +34,7 @@ class VisitDetails(ctk.CTkFrame):
             font=ctk.CTkFont(size=14),
             fg_color="#57c2a8",
             hover_color="#034172",
-            command= lambda: self.controller.show__internal_page("main")
+            command= lambda: self.controller.show_internal_page("main")
         )
         back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
 
