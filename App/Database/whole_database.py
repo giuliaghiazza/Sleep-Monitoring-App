@@ -23,28 +23,6 @@ c.execute("""CREATE TABLE IF NOT EXISTS Users (
     )"""     
     )
 
-c.execute("""CREATE TABLE IF NOT EXISTS Patients(
-          user_id INTEGER PRIMARY KEY,          
-          Name VARCHAR(30),
-          Surname VARCHAR(30) NOT NULL,
-          Codice_Fiscale CHAR(16),
-          DoB DATE,
-          Gender varchar,
-          Age INTEGER CHECK(Age>=0),
-          City_of_Birth VARCHAR(20),
-          Province_of_Birth CHAR(2),
-          City_of_Recidency VARCHAR(20),
-          Province_of_Recidency CHAR(2),
-          CAP INTEGER,
-          n_booked INTEGER DEFAULT '0',
-          Diagnosis varchar,
-          Theraphy varchar, 
-          profilepic PATH,
-          FOREIGN KEY (user_id) REFERENCES Users(user_id)
-          )
-          """)
-# All of the profiles pictures should be added to the tables as a filepath
-
 c.execute("""CREATE TABLE IF NOT EXISTS Doctors(
           user_id INTEGER PRIMARY KEY,
           Name VARCHAR(30) NOT NULL,
@@ -62,6 +40,31 @@ c.execute("""CREATE TABLE IF NOT EXISTS Doctors(
           )
           """)
 #A system for direct messages could be implemented
+
+
+c.execute("""CREATE TABLE IF NOT EXISTS Patients(
+          user_id INTEGER PRIMARY KEY,          
+          Name VARCHAR(30),
+          Surname VARCHAR(30) NOT NULL,
+          Codice_Fiscale CHAR(16),
+          DoB DATE,
+          Gender varchar,
+          Age INTEGER CHECK(Age>=0),
+          City_of_Birth VARCHAR(20),
+          Province_of_Birth CHAR(2),
+          City_of_Recidency VARCHAR(20),
+          Province_of_Recidency CHAR(2),
+          CAP INTEGER,
+          n_booked INTEGER DEFAULT '0',
+          Diagnosis varchar,
+          Theraphy varchar, 
+          profilepic PATH,
+          assigned_doctor integer,
+          FOREIGN KEY (user_id) REFERENCES Users(user_id),
+          FOREIGN KEY (assigned_doctor) REFERENCES Doctors(user_id)
+          )
+          """)
+# All of the profiles pictures should be added to the tables as a filepath
 
 c.execute("""CREATE TABLE IF NOT EXISTS Technicians(
           user_id INTEGER PRIMARY KEY,
@@ -172,6 +175,8 @@ c.execute("""CREATE TABLE IF NOT EXISTS PrescriptionDevices(
           prescription_id integer PRIMARY KEY,
           sensor_type varchar, 
           notes text, 
+          patient integer,
+          FOREIGN KEY (patient) REFERENCES Patients(user_id),
           FOREIGN KEY (prescription_id) REFERENCES Prescription(prescription_id)
           )
           """)
@@ -180,7 +185,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS Sensors(
           Code_device INTEGER PRIMARY KEY AUTOINCREMENT,
           Name VARCHAR(15) NOT NULL,
           Signal_Acquired VARCHAR(15) NOT NULL,
-          availability CHAR(1) CHECK(availability IN('U','A','M')) DEFAULT 'A'
+          availability CHAR(1) CHECK(availability IN('U','A','M')) DEFAULT 'A',
           model TEXT, 
           description text,
           Status TEXT,
@@ -234,6 +239,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS Indexes(
           t_acquisition DATETIME,
           Peak_value DECIMAL,
           Latency DECIMAL,
+          session_id integer,
           FOREIGN KEY (session_id) REFERENCES Sessions(session_id),          
           FOREIGN KEY (Code_device) REFERENCES Sensors(Code_device)  
           )        
@@ -241,19 +247,6 @@ c.execute("""CREATE TABLE IF NOT EXISTS Indexes(
 #Latency rispetto a picco precedente, se poi servono altri tipi di indicatori potremo aggiungerne
 #Status: U=unavailable, A=available, M=maintnence
 
-c.execute("""CREATE TABLE IF NOT EXISTS SessionsReport(
-          ssreport_id integer primary key AUTOINCREMENT,
-          patient integer,  
-          session_id integer,
-          session2_id integer,
-          session3_id integer,          
-          FOREIGN KEY (patient) REFERENCES Patients(user_id),
-          FOREIGN KEY (session_id) REFERENCES Sessions(session_id), 
-          FOREIGN KEY (session2_id) REFERENCES Sessions(session_id),          
-          FOREIGN KEY (session3_id) REFERENCES Sessions(session_id)
-          )
-          """) 
-# So I can connect multiple session to one report 
 
 c.execute("""CREATE TABLE IF NOT EXISTS SensorsReport(
           snreport_id integer primary key AUTOINCREMENT,
@@ -261,8 +254,13 @@ c.execute("""CREATE TABLE IF NOT EXISTS SensorsReport(
           report_type varchar,
           file_path path,
           created_at DATETIME,
+          session_id integer,
+          session2_id integer,
+          session3_id integer,          
           FOREIGN KEY (patient) REFERENCES Patients(user_id),
-          FOREIGN KEY (snreport_id) REFERENCES SessionsReport(ssreport_id)
+          FOREIGN KEY (session_id) REFERENCES Sessions(session_id), 
+          FOREIGN KEY (session2_id) REFERENCES Sessions(session_id),          
+          FOREIGN KEY (session3_id) REFERENCES Sessions(session_id)
           )
           """)
 # I could have multiple possible sessions and sensors per report 
@@ -276,8 +274,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS SensorsPerformanceReport(
           file_path path,
           created_at DATETIME,
           warnings integer,
-          FOREIGN KEY (patient) REFERENCES Patients(user_id),
-          FOREIGN KEY (snreport_id) REFERENCES SessionsReport(snreport_id)
+          FOREIGN KEY (patient) REFERENCES Patients(user_id)
           )
           """)
 
@@ -321,11 +318,16 @@ c.execute("""CREATE TABLE IF NOT EXISTS VisitQuestionnaire(
 c.execute("""CREATE TABLE IF NOT EXISTS PeriodicQuestionnaire(
           squest_id integer primary key AUTOINCREMENT,
           patient integer,
+          sleep_latency text, 
+          sleep_duration text, 
+          sleep_disruptions integer, 
+          sleep_during the day text, 
+          sleep_hygiene text, 
+          medication_collateral_effects text, 
+          
           satisfaction integer, 
           notes text,
-          FOREIGN KEY (patient) REFERENCES Patients(user_id),
-          FOREIGN KEY (sensor_id) REFERENCES Sensors(Code_device),
-          FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
+          FOREIGN KEY (patient) REFERENCES Patients(user_id)
           )
           """)
 

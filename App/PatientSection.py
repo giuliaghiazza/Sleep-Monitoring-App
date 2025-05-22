@@ -2,7 +2,7 @@ import customtkinter as ctk
 from PIL import Image
 import sqlite3
 import datetime
-
+ 
 # Dictionary to hold pages
 pages = {}
 doc_avail_vect=None

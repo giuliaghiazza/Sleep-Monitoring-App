@@ -67,7 +67,7 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
             command=self.login_callback
         )
         login_button.grid(row=4, column=0, padx=35, pady=10)    #numeri da rivedere
-
+ 
         signin_button = ctk.CTkButton(
             master=self,
             text="Sign-in",     #da aggiungere icona se vogliamo metterne una
