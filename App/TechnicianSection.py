@@ -86,7 +86,7 @@ class ManageSensors(ctk.CTkFrame):
         # === Patient Name ===
         patient_row = len(field_info)
         patient_label = ctk.CTkLabel(form_frame, text="Assign to patient (by name):")
-        patient_label.grid(row=patient_row, column=0, sticky="e", padx=5, pady=5)
+        patient_label.grid(row=patient_row, column=1, padx=5, pady=5)
 
         current_patient_name = self.sensor_data["patient"] if self.sensor_data and self.sensor_data["patient"] else ""
         self.patient_entry = ctk.CTkEntry(form_frame, placeholder_text=str(current_patient_name))
@@ -95,7 +95,7 @@ class ManageSensors(ctk.CTkFrame):
 
         # === Submit Button ===
         self.submit_btn = ctk.CTkButton(parent, text="Update Sensor", command=self.submit)
-        self.submit_btn.grid(row=2, column=0, pady=(10,500))
+        self.submit_btn.grid(row=2, column=1, pady=(10,500))
 
         availability_value = self.fields.get("availability")
         if availability_value and availability_value.get() == "U":
@@ -106,7 +106,7 @@ class ManageSensors(ctk.CTkFrame):
                     hover_color="#57cc99",
                     #command=self.see_report
             )
-        self.see_report_btn.grid(row=2, column=1, pady=(10,500))
+        self.see_report_btn.grid(row=2, column=0, pady=(10,500))
     def submit(self):
         availability = self.fields["availability"].get().strip().upper() or self.sensor_data["availability"]
         status = self.fields["Status"].get().strip() or self.sensor_data["Status"]
@@ -450,7 +450,7 @@ class Main(ctk.CTkFrame):
                         hover_color="#d3d3d3",
                         corner_radius=0,
                         font=ctk.CTkFont(size=12),
-                        command=lambda sid=value: self.controller.show_manage_sensor_page(sid, user_id)
+                        command=lambda sid=value: self.controller.show_manage_sensor_page(sid, self.user_id)
                     )
                     btn.grid(row=i+4, column=j, padx=5, pady=2, sticky="ew")
                 else:

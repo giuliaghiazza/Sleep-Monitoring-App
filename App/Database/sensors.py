@@ -17,7 +17,7 @@ for PrescriptionDevices_id, name, Signal_Acquired, patient, Status, availability
 # Sensors available or maintenance 
 sensors = [
     ("BioSTAMP2", "EMG", "Working", "M"),
-    ("BioSTAMP3", "EEG", "Working", "A"),
+    ("BioSTAMP3", "EMG", "Working", "A"),
     ("ZMachine", "EEG", "Working", "A"),
     ("Biosignalsplux", "EOG", "Working", "A"),
     ("SOMNOWatch", "ACT", "Working", "A")

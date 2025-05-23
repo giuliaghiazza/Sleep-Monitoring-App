@@ -7,6 +7,8 @@ c.execute("""DELETE FROM Appointments;""")
 
 # Appointments with (slot_tempo, doctor_id, patient_id, visit_type)
 appointments = [
+    ('2025-04-15 12:30', 1, 8, 1), 
+    ('2025-04-30 16:30', 1, 8, 2), 
     ('2025-05-29 08:30', 1, 5, 1),
     ('2025-05-29 16:30', 1, 7, 2),
     ('2025-06-15 10:00', 1, 5, 2),

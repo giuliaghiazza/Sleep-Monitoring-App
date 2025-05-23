@@ -5,6 +5,7 @@ from PatientSection import Home_patPage
 from DoctorSection import Home_docPage
 from TechnicianSection import Home_tecPage
 
+
 # Set theme and appearance
 ctk.set_appearance_mode("Light")
 ctk.set_default_color_theme("green")
@@ -12,11 +13,11 @@ ctk.set_default_color_theme("green")
 # Dictionary to hold pages
 pages = {}
 
-class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la prima
+class LoginPage(ctk.CTkFrame):     
     def __init__(self, master, controller):
         super().__init__(master, fg_color="white")
         self.controller = controller
-        self.conn = sqlite3.connect('App/Database/gui_database.db')   #c'è un modo migliore per connettere la classe alle funzioni in Root ma non lo trovo
+        self.conn = sqlite3.connect('App/Database/gui_database.db')   
         self.cursor = self.conn.cursor()
         self.grid_columnconfigure(0, weight=1)
 
@@ -38,7 +39,7 @@ class LoginPage(ctk.CTkFrame):     #non ho recall ad altre finestre in quanto la
         login_lable.grid(row=1, column=0, padx=20, pady=10)   #numeri da rivedere
         
         # === Fill in fields ===
-        self.user_entry=ctk.CTkEntry(self,                                                       #non ho capito perchè. di per se non da errore anche senza self ma senza non posso prendere info dall'utente
+        self.user_entry=ctk.CTkEntry(self,                                                     
                                 placeholder_text='Username',
                                 width=200,
                                 height=30,

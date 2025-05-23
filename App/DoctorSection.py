@@ -1,9 +1,73 @@
 import customtkinter as ctk
-from PIL import Image
+from tkinter import messagebox
+
+import fitz  # PyMuPDF
+from PIL import Image, ImageTk
+import tkinter as tk
+
 import sqlite3
 import datetime
 import os
-from tkinter import messagebox
+import platform
+import subprocess
+
+import tkinter as tk
+from PIL import Image, ImageTk
+import fitz  # PyMuPDF
+
+def show_pdf_in_new_window(pdf_path):
+    import fitz
+    import tkinter as tk
+    from PIL import Image, ImageTk
+
+    doc = fitz.open(pdf_path)
+    win = tk.Toplevel()
+    win.title("PDF Viewer")
+    win.geometry("650x400")
+
+    canvas = tk.Canvas(win)
+    v_scrollbar = tk.Scrollbar(win, orient="vertical", command=canvas.yview)
+    h_scrollbar = tk.Scrollbar(win, orient="horizontal", command=canvas.xview)
+    scrollable_frame = tk.Frame(canvas)
+
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+
+    canvas.pack(side="left", fill="both", expand=True)
+    v_scrollbar.pack(side="right", fill="y")
+    h_scrollbar.pack(side="bottom", fill="x")
+
+    # Mouse wheel scrolling support
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def _on_shift_mousewheel(event):
+        canvas.xview_scroll(int(-1*(event.delta/120)), "units")
+
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+    canvas.bind_all("<Shift-MouseWheel>", _on_shift_mousewheel)
+    canvas.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))
+    canvas.bind_all("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))
+
+    image_refs = []
+
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        pix = page.get_pixmap(dpi=150)
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        photo = ImageTk.PhotoImage(img)
+
+        label = tk.Label(scrollable_frame, image=photo)
+        label.image = photo
+        image_refs.append(photo)
+        label.pack(pady=10, padx=10)
+
+    doc.close()
 
 class VisitDetails(ctk.CTkFrame):
 
@@ -14,7 +78,6 @@ class VisitDetails(ctk.CTkFrame):
         self.appointment_id = appointment_id
         self.conn = sqlite3.connect('App/Database/gui_database.db')
         self.cursor = self.conn.cursor()
-        
 
         self.cursor.execute("""
         SELECT visit_type
@@ -23,7 +86,7 @@ class VisitDetails(ctk.CTkFrame):
         """, (self.appointment_id,))
 
         appointment_type = self.cursor.fetchone()
-
+        
         scrollable_frame = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
         scrollable_frame.pack(pady=20, padx=10, fill="both", expand=True)
         scrollable_frame.grid_columnconfigure((0, 1, 2), weight=1)
@@ -65,34 +128,43 @@ class VisitDetails(ctk.CTkFrame):
         back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
 
         # ==== Patient Info ====
-        ctk.CTkLabel(parent, text=f"Name: {name} {surname}", font=ctk.CTkFont(size=12)).grid(row=1, column=1, sticky="w", pady=5)
-        ctk.CTkLabel(parent, text=f"Age: {age}", font=ctk.CTkFont(size=12)).grid(row=2, column=1, sticky="w", pady=5)
-        ctk.CTkLabel(parent, text=f"Gender: {gender}", font=ctk.CTkFont(size=12)).grid(row=3, column=1, sticky="w", pady=5)
+        ctk.CTkLabel(parent, text=f"Name: {name} {surname}, Age: {age}, Gender: {gender}", font=ctk.CTkFont(size=12)).grid(row=1, column=1, sticky="ew", pady=5)
+        
 
         # ==== Questionnaire or Sensor Report ====
         if visit_type == 1:  # Assuming '1' = first visit
             quest_button = ctk.CTkButton(parent, text="Open First Visit Questionnaire PDF", command=self.open_questionnaire_pdf)
-            quest_button.grid(row=4, column=1, pady=10)
+            quest_button.grid(row=2, column=1, pady=10)
+            row = 3
         else:
-            report_button = ctk.CTkButton(parent, text="Open Last Sensor Report", command=self.open_sensor_report_pdf)
-            report_button.grid(row=4, column=1, pady=10)
+            report_button = ctk.CTkButton(parent, text="Open Visit Report", command=self.open_sensor_report_pdf)
+            report_button.grid(row=2, column=1, pady=10)
+
+            report_button = ctk.CTkButton(parent, text="Open Sensor Report", command=self.open_sensor_report_pdf)
+            report_button.grid(row=3, column=1, pady=10)
+
+            report_button = ctk.CTkButton(parent, text="Open Periodic Questionnaires", command=self.open_sensor_report_pdf)
+            report_button.grid(row=4, column = 1, pady=10)
+            row = 5
+
+        
 
         # ==== Doctor Notes Entry ====
-        ctk.CTkLabel(parent, text="Doctor Notes:", font=ctk.CTkFont(size=16, weight="bold")).grid(row=5, column=1, pady=(15, 5))
+        ctk.CTkLabel(parent, text="Doctor Notes:", font=ctk.CTkFont(size=16, weight="bold")).grid(row=row, column=1, pady=(15, 5))
         self.notes_entry = ctk.CTkTextbox(parent, height=100, width=300)
-        self.notes_entry.grid(row=6, column=1, pady=5)
+        self.notes_entry.grid(row=row+1, column=1, pady=5)
 
         # ==== Current Diagnosis ====
-        ctk.CTkLabel(parent, text=f"Diagnosis:", font=ctk.CTkFont(size=16)).grid(row=7, column=1, pady=5)
+        ctk.CTkLabel(parent, text=f"Diagnosis:", font=ctk.CTkFont(size=16)).grid(row=row+2, column=1, pady=5)
         self.diagnosis_entry = ctk.CTkEntry(parent, width=300)
         self.diagnosis_entry.insert(0, diagnosis if diagnosis else "")
-        self.diagnosis_entry.grid(row=8, column=1, pady=5)
+        self.diagnosis_entry.grid(row=row+3, column=1, pady=5)
 
-        # ==== Current Therapy (Editable) ====
-        ctk.CTkLabel(parent, text=f"Current Therapy:", font=ctk.CTkFont(size=16)).grid(row=9, column=1, pady=5)
+        # ==== Add Therapy (Editable) ====
+        ctk.CTkLabel(parent, text=f"Current Therapy:", font=ctk.CTkFont(size=16)).grid(row=row+4, column=1, pady=5)
         self.therapy_entry = ctk.CTkTextbox(parent, height=60, width=300)
         self.therapy_entry.insert("1.0", therapy if therapy else "")
-        self.therapy_entry.grid(row=10, column=1, pady=5)
+        self.therapy_entry.grid(row=row+5, column=1, pady=5)
 
         # ==== Active Therapies from Therapy Table ====
         self.cursor.execute("""
@@ -104,22 +176,185 @@ class VisitDetails(ctk.CTkFrame):
         therapy_list = self.cursor.fetchall()
 
         if therapy_list:
-            ctk.CTkLabel(parent, text="Prescribed Drugs:", font=ctk.CTkFont(size=16, weight="bold")).grid(row=11, column=1, pady=(10, 5))
+            ctk.CTkLabel(parent, text="Prescribed Drugs:", font=ctk.CTkFont(size=16, weight="bold")).grid(row=row+6, column=1, pady=(10, 5))
             for idx, (drug, dosage, duration, note) in enumerate(therapy_list):
                 info = f"{drug}: {dosage}, {duration} days\nNote: {note}"
-                ctk.CTkLabel(parent, text=info, font=ctk.CTkFont(size=14)).grid(row=12+idx, column=1, sticky="w", pady=2)
+                ctk.CTkLabel(parent, text=info, font=ctk.CTkFont(size=14)).grid(row=row+7+idx, column=1, sticky="w", pady=2)
 
         # ==== Button to Issue Prescription ====
         prescribe_button = ctk.CTkButton(
             parent, text="➕ Issue Prescription", fg_color="#1e81b0", hover_color="#145374"
+            
         )
-        prescribe_button.grid(row=100, column=1, pady=20)
+        prescribe_button.grid(row=100, column=1, pady=(10,500))
 
     def open_questionnaire_pdf(self):
         os.system("open files/first_visit_questionnaire.pdf")  # Adjust path as needed
 
     def open_sensor_report_pdf(self):
         os.system("open files/last_sensor_report.pdf")  # Adjust path as needed
+
+class PatientPage(ctk.CTkFrame): 
+    def __init__(self, master, controller, patient_id, user_id):
+        super().__init__(master, fg_color="white")
+        self.user_id = user_id
+        self.controller = controller
+        self.patient_id = patient_id
+        self.conn = sqlite3.connect('App/Database/gui_database.db')
+        self.cursor = self.conn.cursor()
+        
+        scrollable_frame = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
+        scrollable_frame.pack(pady=20, padx=10, fill="both", expand=True)
+        scrollable_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        self.patientgui(scrollable_frame, patient_id)
+
+    def patientgui(self, parent, patient_id):
+        
+        print(patient_id)
+
+        # === Back Button in Top-Left ===
+        back_button = ctk.CTkButton(
+            master=parent,
+            text="← Back",
+            width=60,
+            height=30,
+            font=ctk.CTkFont(size=14),
+            fg_color="#57c2a8",
+            hover_color="#034172",
+            command= lambda: self.controller.show_internal_page("main")
+        )
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+
+        self.cursor.execute("""
+            SELECT P.Name, P.Surname, P.Age, P.Gender, P.Diagnosis
+            FROM Patients P
+            WHERE P.user_id = ?
+            """, (patient_id,))
+        patient = self.cursor.fetchone()
+
+        # Anagraphical data 
+        name, surname, age, gender, diagnosis = patient
+
+        row = 1
+        ctk.CTkLabel(parent, text=f"🧑‍⚕️ {name} {surname} — Age: {age} — Gender: {gender}", font=ctk.CTkFont(size=16, weight="bold")).grid(row=row, column=0, padx=10, pady=10, sticky="w")
+        row += 1
+
+        # -- Diagnosis --
+        diag_text = diagnosis if diagnosis else "No diagnosis available."
+        ctk.CTkLabel(parent, text=f"📋 Diagnosis: {diag_text}", font=ctk.CTkFont(size=14)).grid(row=row, column=0, padx=10, pady=5, sticky="w")
+        row += 1
+
+        # -- Prescribed Therapies --
+        self.cursor.execute("""
+            SELECT D.name, T.dosage, T.duration, T.notes
+            FROM Therapy T
+            JOIN Drugs D ON T.drug1 = D.drug_id
+            WHERE T.patient = ?
+        """, (patient_id,))
+        therapies = self.cursor.fetchall()
+        if therapies:
+            ctk.CTkLabel(parent, text="💊 Prescribed Medications:", font=ctk.CTkFont(size=14, weight="bold")).grid(row=row, column=0, padx=10, pady=(10, 5), sticky="w")
+            row += 1
+            for med in therapies:
+                info = f"• {med[0]} — {med[1]} for {med[2]} days\n   Note: {med[3]}"
+                ctk.CTkLabel(parent, text=info, font=ctk.CTkFont(size=13)).grid(row=row, column=0, padx=15, sticky="w")
+                row += 1
+
+        # -- Sensor Reports --
+        self.cursor.execute("""
+            SELECT snreport_id, file_path, created_at
+            FROM SensorsReport
+            WHERE patient = ?
+            ORDER BY created_at DESC
+        """, (patient_id,))
+
+        sensor_reports = self.cursor.fetchall()
+
+        if sensor_reports:
+            ctk.CTkLabel(parent, text="📈 Sensor Reports:", font=ctk.CTkFont(size=14, weight="bold")).grid(row=row, column=0, padx=10, pady=(15, 5), sticky="w")
+            row += 1
+
+            for report_id, file_path, created_at in sensor_reports:
+                display_text = f"At-home — {created_at.split(' ')[0]}"
+                # File path should have patient name added
+
+                ctk.CTkButton(parent, 
+                            text= f"📄 {display_text}",
+                            command=lambda path=file_path: show_pdf_in_new_window(path)
+                            ).grid(row=row, column=0, padx=20, pady=5, sticky="w")
+                row += 1
+        else:
+            ctk.CTkLabel(parent, text="No sensor reports available.", font=ctk.CTkFont(size=13, slant="italic")).grid(row=row, column=0, padx=10, pady=5, sticky="w")
+            row += 1
+
+        # === Graphs === 
+        def update_graph_image(choice, row):
+            image_path = {
+                "Last 2 Weeks": "Graphs/two_weeks.png",
+                "Last Month": "Graphs/last_month.png",
+                "All Time": "Graphs/last_month.png",  # You can change this if needed
+            }.get(choice, "Graphs/two_weeks.png")
+
+            try:
+                img = ctk.CTkImage(light_image=Image.open(image_path), size=(300, 200))
+                label = ctk.CTkLabel(parent, image=img)
+                label.image = img  
+                label.grid(row=row, column=0, columnspan=2, padx=10, pady=10)
+            except Exception as e:
+                image_label.configure(text=f"Image not found: {image_path}")
+                image_label.image = None
+
+        ctk.CTkLabel(parent, text="Select Timeframe for Graph:", font=ctk.CTkFont(size=13)).grid(row=row, column=0, padx=10, pady=(5, 0), sticky="w")
+        row += 1
+
+        image_label = ctk.CTkLabel(parent, text="")  # Empty label to hold the image
+        image_label.grid(row=row, column=0, padx=10, pady=10, sticky="w")
+        row += 1
+
+        timeframe_dropdown = ctk.CTkOptionMenu(
+            parent,
+            values=["Last 2 Weeks", "Last Month", "All Time"],
+            command=lambda value: update_graph_image(value, row + 1)
+        )
+        timeframe_dropdown.grid(row=row, column=0, padx=10, pady=5, sticky="w")
+
+        timeframe_dropdown.set("Last 2 Weeks")  # Set default value
+        update_graph_image("Last 2 Weeks", row + 1)
+        row += 2
+
+        return row + 2
+
+
+        # # -- Questionnaire Averages --
+        # ctk.CTkLabel(parent, text="📝 Questionnaire Averages:", font=ctk.CTkFont(size=14, weight="bold")).grid(row=row, column=0, padx=10, pady=(15, 5), sticky="w")
+        # row += 1
+
+        # self.cursor.execute("SELECT field_name, question_text, option_1, option_2, option_3, option_4, option_5 FROM QuestionDefinitions")
+        # questions = self.cursor.fetchall()
+
+        # for q in questions:
+        #     field, text, *options = q
+
+        #     self.cursor.execute(f"""
+        #         SELECT AVG({field})
+        #         FROM PeriodicQuestionnaire
+        #         WHERE patient_id = ?
+        #     """, (patient_id,))
+        #     avg = self.cursor.fetchone()[0]
+        #     if avg:
+        #         mean_value = round(avg)
+        #         meaning = options[mean_value - 1] if 1 <= mean_value <= 5 else "Unknown"
+        #         msg = f"{text} → Mean: {mean_value} ({meaning})"
+        #     else:
+        #         msg = f"{text} → No data"
+        #     ctk.CTkLabel(parent, text=msg, font=ctk.CTkFont(size=13)).grid(row=row, column=0, padx=15, pady=2, sticky="w")
+        #     row += 1
+
+
+
+    # def show_graph_image(self):
+    #     os.system("open App/example_graph.png")  # Replace with actual graph viewer 
 
 class Main(ctk.CTkFrame):   
     def toggle_manage_mode(self):
@@ -129,12 +364,13 @@ class Main(ctk.CTkFrame):
         )
         self.show_appointments("all", user_id=self.controller.user_id)
 
-    def __init__(self, master, controller, user_id=None):
+    def __init__(self, master, controller, user_id):
         super().__init__(master, fg_color="white")
         self.controller = controller
         self.conn = sqlite3.connect('App/Database/gui_database.db')
         self.cursor = self.conn.cursor()
         self.manage_mode = False
+        self.user_id = user_id
 
         # Scrollable frame for appointments
         scrollable_frame = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
@@ -144,6 +380,7 @@ class Main(ctk.CTkFrame):
         self.Appointment_doc_gui(scrollable_frame, user_id)
 
     def Appointment_doc_gui(self, parent, user_id):
+        self.user_id = user_id
         self.appointments_container = parent
         parent.grid_columnconfigure((0, 1, 2), weight=1)
 
@@ -211,13 +448,13 @@ class Main(ctk.CTkFrame):
                                             button_color ="#38a3a5",
                                             button_hover_color="#57cc99",
                                             values=patient_names, 
-                                            command=self.optionmenu_callback)
+                                            command=lambda selected_name: self.optionmenu_callback(selected_name, user_id))
         self.optionmenu.grid(row=1001, column=1, padx=5, pady=(10,500), sticky="ew")
 
     
-    def optionmenu_callback(self, selected_name):
+    def optionmenu_callback(self, selected_name, user_id):
         patient_id = self.patient_id_map[selected_name]
-        #self.controller.show_internal_page("patient", patient_id)
+        self.controller.show_patient_page(user_id, patient_id)
 
     def show_appointments(self, time_slot, user_id):
         for widget in self.appointments_container.winfo_children():
@@ -345,3 +582,9 @@ class Home_docPage(ctk.CTkFrame):
         self.pages["visit_details"] = visit_details_page
         visit_details_page.grid(row=0, column=0, sticky="nsew")
         visit_details_page.tkraise()
+
+    def show_patient_page(self, patient_id, user_id):
+        patient_page = PatientPage(self, self, user_id, patient_id)
+        self.pages["patientpage"] = patient_page
+        patient_page.grid(row=0, column=0, sticky="nsew")
+        patient_page.tkraise()

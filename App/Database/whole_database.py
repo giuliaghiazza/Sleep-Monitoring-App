@@ -234,19 +234,19 @@ c.execute("""CREATE TABLE IF NOT EXISTS Acquisitions(
 #durata acquisizione? 
 
 c.execute("""CREATE TABLE IF NOT EXISTS Indexes(
-          Code INTEGER NOT NULL,
+          patient INTEGER NOT NULL,
           Code_device INTEGER,
           t_acquisition DATETIME,
           Peak_value DECIMAL,
           Latency DECIMAL,
           session_id integer,
+          FOREIGN KEY (patient) REFERENCES Patients(user_id),          
           FOREIGN KEY (session_id) REFERENCES Sessions(session_id),          
           FOREIGN KEY (Code_device) REFERENCES Sensors(Code_device)  
           )        
           """)
 #Latency rispetto a picco precedente, se poi servono altri tipi di indicatori potremo aggiungerne
 #Status: U=unavailable, A=available, M=maintnence
-
 
 c.execute("""CREATE TABLE IF NOT EXISTS SensorsReport(
           snreport_id integer primary key AUTOINCREMENT,
@@ -273,7 +273,9 @@ c.execute("""CREATE TABLE IF NOT EXISTS SensorsPerformanceReport(
           session_id integer,
           file_path path,
           created_at DATETIME,
+          code_device integer,
           warnings integer,
+          FOREIGN KEY (code_device) REFERENCES Sensors(code_device)
           FOREIGN KEY (patient) REFERENCES Patients(user_id)
           )
           """)
@@ -315,21 +317,33 @@ c.execute("""CREATE TABLE IF NOT EXISTS VisitQuestionnaire(
           """)
 # Questionnaires should be differentiated for different type of visits
 
-c.execute("""CREATE TABLE IF NOT EXISTS PeriodicQuestionnaire(
-          squest_id integer primary key AUTOINCREMENT,
-          patient integer,
-          sleep_latency text, 
-          sleep_duration text, 
-          sleep_disruptions integer, 
-          sleep_during the day text, 
-          sleep_hygiene text, 
-          medication_collateral_effects text, 
-          
-          satisfaction integer, 
-          notes text,
-          FOREIGN KEY (patient) REFERENCES Patients(user_id)
-          )
+c.execute("""CREATE TABLE PeriodicQuestionnaire (
+                questionnaire_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                patient_id INTEGER NOT NULL,
+                date DATE NOT NULL,
+                sleep_duration INTEGER,
+                sleep_quality INTEGER,
+                trouble_falling_asleep INTEGER, 
+                sleep_disruption INTEGER,
+                daytime_sleepiness INTEGER, 
+                sleep_hygene INTEGER, 
+                stress_level INTEGER,
+                FOREIGN KEY (patient_id) REFERENCES Patients(user_id)
+            )
           """)
+
+c.execute("""
+            CREATE TABLE QuestionDefinitions (
+                question_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                field_name TEXT NOT NULL UNIQUE,
+                question_text TEXT NOT NULL,
+                option_1 TEXT NOT NULL,
+                option_2 TEXT NOT NULL,
+                option_3 TEXT NOT NULL,
+                option_4 TEXT NOT NULL,
+                option_5 TEXT NOT NULL
+            )
+        """)
 
 # c.execute("""CREATE TABLE IF NOT EXISTS PatientDiary(
 #           entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
