@@ -16,18 +16,13 @@ from PIL import Image, ImageTk
 import fitz  # PyMuPDF
 
 def show_pdf_in_new_window(pdf_path):
-    import fitz
-    import tkinter as tk
-    from PIL import Image, ImageTk
-
     doc = fitz.open(pdf_path)
+
     win = tk.Toplevel()
     win.title("PDF Viewer")
-    win.geometry("650x400")
 
     canvas = tk.Canvas(win)
-    v_scrollbar = tk.Scrollbar(win, orient="vertical", command=canvas.yview)
-    h_scrollbar = tk.Scrollbar(win, orient="horizontal", command=canvas.xview)
+    scrollbar = tk.Scrollbar(win, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas)
 
     scrollable_frame.bind(
@@ -36,23 +31,10 @@ def show_pdf_in_new_window(pdf_path):
     )
 
     canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-    canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+    canvas.configure(yscrollcommand=scrollbar.set)
 
     canvas.pack(side="left", fill="both", expand=True)
-    v_scrollbar.pack(side="right", fill="y")
-    h_scrollbar.pack(side="bottom", fill="x")
-
-    # Mouse wheel scrolling support
-    def _on_mousewheel(event):
-        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-
-    def _on_shift_mousewheel(event):
-        canvas.xview_scroll(int(-1*(event.delta/120)), "units")
-
-    canvas.bind_all("<MouseWheel>", _on_mousewheel)
-    canvas.bind_all("<Shift-MouseWheel>", _on_shift_mousewheel)
-    canvas.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))
-    canvas.bind_all("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))
+    scrollbar.pack(side="right", fill="y")
 
     image_refs = []
 
@@ -65,8 +47,24 @@ def show_pdf_in_new_window(pdf_path):
         label = tk.Label(scrollable_frame, image=photo)
         label.image = photo
         image_refs.append(photo)
-        label.pack(pady=10, padx=10)
+        label.pack(pady=10)
 
+    def _on_mousewheel(event):
+        # Safeguard against using destroyed widget
+        try:
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        except tk.TclError:
+            pass  # Widget is gone
+
+    # Bind and store reference to unbind later
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+    def on_close():
+        # Unbind the scroll event to avoid error
+        canvas.unbind_all("<MouseWheel>")
+        win.destroy()
+
+    win.protocol("WM_DELETE_WINDOW", on_close)
     doc.close()
 
 class VisitDetails(ctk.CTkFrame):
@@ -237,13 +235,20 @@ class PatientPage(ctk.CTkFrame):
         name, surname, age, gender, diagnosis = patient
 
         row = 1
-        ctk.CTkLabel(parent, text=f"🧑‍⚕️ {name} {surname} — Age: {age} — Gender: {gender}", font=ctk.CTkFont(size=16, weight="bold")).grid(row=row, column=0, padx=10, pady=10, sticky="w")
+        ctk.CTkLabel(parent, text=f"🧑‍⚕️ {name} {surname} — Age: {age} — Gender: {gender}", font=ctk.CTkFont(size=16, weight="bold")).grid(row=row, column=0, columnspan = 2, padx=10, pady=10, sticky="w")
         row += 1
 
-        # -- Diagnosis --
+        # Diagnosis 
         diag_text = diagnosis if diagnosis else "No diagnosis available."
-        ctk.CTkLabel(parent, text=f"📋 Diagnosis: {diag_text}", font=ctk.CTkFont(size=14)).grid(row=row, column=0, padx=10, pady=5, sticky="w")
+        ctk.CTkLabel(parent, text=f"📋 Diagnosis: {diag_text}", font=ctk.CTkFont(size=14)).grid(row=row, column=0,columnspan = 2, padx=10, pady=5, sticky="w")
         row += 1
+
+        # ==== Button to Issue Prescription ====
+        prescribe_button = ctk.CTkButton(
+            parent, text="➕ Issue Prescription", fg_color="#1e81b0", hover_color="#145374"
+            
+        )
+        prescribe_button.grid(row=row, column=1, pady=10)
 
         # -- Prescribed Therapies --
         self.cursor.execute("""
@@ -258,7 +263,7 @@ class PatientPage(ctk.CTkFrame):
             row += 1
             for med in therapies:
                 info = f"• {med[0]} — {med[1]} for {med[2]} days\n   Note: {med[3]}"
-                ctk.CTkLabel(parent, text=info, font=ctk.CTkFont(size=13)).grid(row=row, column=0, padx=15, sticky="w")
+                ctk.CTkLabel(parent, text=info, font=ctk.CTkFont(size=13)).grid(row=row, column=0, columnspan = 2, padx=15, sticky="w")
                 row += 1
 
         # -- Sensor Reports --
@@ -288,73 +293,69 @@ class PatientPage(ctk.CTkFrame):
             ctk.CTkLabel(parent, text="No sensor reports available.", font=ctk.CTkFont(size=13, slant="italic")).grid(row=row, column=0, padx=10, pady=5, sticky="w")
             row += 1
 
-        # === Graphs === 
-        def update_graph_image(choice, row):
+        ## === Graphs === 
+        image_label = None
+
+        def update_graph_image(choice):
             image_path = {
-                "Last 2 Weeks": "Graphs/two_weeks.png",
-                "Last Month": "Graphs/last_month.png",
-                "All Time": "Graphs/last_month.png",  # You can change this if needed
-            }.get(choice, "Graphs/two_weeks.png")
+                "Last 2 Weeks": "Mario Rossi/Graphs/two_weeks.png",
+                "Last Month": "Mario Rossi/Graphs/last_month.png",
+                "All Time": "Mario Rossi/Graphs/last_month.png",  # Adjust if needed
+            }.get(choice, "Mario Rossi/Graphs/two_weeks.png")
 
             try:
                 img = ctk.CTkImage(light_image=Image.open(image_path), size=(300, 200))
-                label = ctk.CTkLabel(parent, image=img)
-                label.image = img  
-                label.grid(row=row, column=0, columnspan=2, padx=10, pady=10)
+                image_label.configure(image=img, text="")  # Remove text in case of error message
+                image_label.image = img  # Keep reference
             except Exception as e:
-                image_label.configure(text=f"Image not found: {image_path}")
+                image_label.configure(text=f"Image not found: {image_path}", image=None)
                 image_label.image = None
 
+        # UI layout
         ctk.CTkLabel(parent, text="Select Timeframe for Graph:", font=ctk.CTkFont(size=13)).grid(row=row, column=0, padx=10, pady=(5, 0), sticky="w")
         row += 1
 
-        image_label = ctk.CTkLabel(parent, text="")  # Empty label to hold the image
-        image_label.grid(row=row, column=0, padx=10, pady=10, sticky="w")
+        image_label = ctk.CTkLabel(parent, text="")  # This label will display the image
+        image_label.grid(row=row-1, column=1, rowspan=2, padx=10, pady=10, sticky="w")
         row += 1
 
         timeframe_dropdown = ctk.CTkOptionMenu(
             parent,
             values=["Last 2 Weeks", "Last Month", "All Time"],
-            command=lambda value: update_graph_image(value, row + 1)
+            command=lambda value: update_graph_image(value)
         )
-        timeframe_dropdown.grid(row=row, column=0, padx=10, pady=5, sticky="w")
-
+        timeframe_dropdown.grid(row=row-1, column=0, padx=10, pady=5, sticky="w")
         timeframe_dropdown.set("Last 2 Weeks")  # Set default value
-        update_graph_image("Last 2 Weeks", row + 1)
+        update_graph_image("Last 2 Weeks")  # Show default graph
+
         row += 2
 
-        return row + 2
+        # -- Questionnaire Averages --
+        ctk.CTkLabel(parent, text="📝 Questionnaire Averages:", font=ctk.CTkFont(size=14, weight="bold")).grid(row=row, column=0, padx=10, pady=(15, 5), sticky="w")
+        row += 1
 
+        self.cursor.execute("SELECT field_name, question_text, option_1, option_2, option_3, option_4, option_5 FROM QuestionDefinitions")
+        questions = self.cursor.fetchall()
 
-        # # -- Questionnaire Averages --
-        # ctk.CTkLabel(parent, text="📝 Questionnaire Averages:", font=ctk.CTkFont(size=14, weight="bold")).grid(row=row, column=0, padx=10, pady=(15, 5), sticky="w")
-        # row += 1
+        for q in questions:
+            field, text, *options = q
 
-        # self.cursor.execute("SELECT field_name, question_text, option_1, option_2, option_3, option_4, option_5 FROM QuestionDefinitions")
-        # questions = self.cursor.fetchall()
+            self.cursor.execute(f"""
+                SELECT AVG({field})
+                FROM PeriodicQuestionnaire
+                WHERE patient_id = ?
+            """, (patient_id,))
+            avg = self.cursor.fetchone()[0]
+            if avg:
+                mean_value = round(avg)
+                meaning = options[mean_value - 1] if 1 <= mean_value <= 5 else "Unknown"
+                msg = f"{text} → Mean: {mean_value} ({meaning})"
+            else:
+                msg = f"{text} → No data"
+            ctk.CTkLabel(parent, text=msg, font=ctk.CTkFont(size=13)).grid(row=row, column=0, padx=15, pady=2, sticky="w")
+            row += 1
 
-        # for q in questions:
-        #     field, text, *options = q
-
-        #     self.cursor.execute(f"""
-        #         SELECT AVG({field})
-        #         FROM PeriodicQuestionnaire
-        #         WHERE patient_id = ?
-        #     """, (patient_id,))
-        #     avg = self.cursor.fetchone()[0]
-        #     if avg:
-        #         mean_value = round(avg)
-        #         meaning = options[mean_value - 1] if 1 <= mean_value <= 5 else "Unknown"
-        #         msg = f"{text} → Mean: {mean_value} ({meaning})"
-        #     else:
-        #         msg = f"{text} → No data"
-        #     ctk.CTkLabel(parent, text=msg, font=ctk.CTkFont(size=13)).grid(row=row, column=0, padx=15, pady=2, sticky="w")
-        #     row += 1
-
-
-
-    # def show_graph_image(self):
-    #     os.system("open App/example_graph.png")  # Replace with actual graph viewer 
+        
 
 class Main(ctk.CTkFrame):   
     def toggle_manage_mode(self):

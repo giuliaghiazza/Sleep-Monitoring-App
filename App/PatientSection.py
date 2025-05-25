@@ -407,11 +407,11 @@ class AppointmentPage(ctk.CTkFrame):
 
 
     #     #per visualizzare visite già prenotate
-    #     self.cursor.execute('SELECT n_booked FROM Patients WHERE user_id=?', user_id)
+    #     self.cursor.execute('SELECT n_booked FROM Patients WHERE user_id=?', (user_id,))
     #     n_booked_tup= self.cursor.fetchone()
     #     n_booked = int(n_booked_tup[0])
     #     n_book=len(n_booked_tup)
-    #     self.cursor.execute('SELECT appointment_id, slot_tempo, doctor FROM Appointments WHERE patient=?', user_id)
+    #     self.cursor.execute('SELECT appointment_id, slot_tempo, doctor FROM Appointments WHERE patient=?', (user_id,))
     #     visit_booked=self.cursor.fetchall()
 
     #     # === Elenco visite prenotate ===
@@ -454,13 +454,13 @@ class AppointmentPage(ctk.CTkFrame):
     #                             )
     #     doc_del_lable.grid(row=0, column=2, padx=20, pady=10)
 
-    #     self.cursor.execute('SELECT slot_tempo FROM Appointments WHERE patient=?', user_id)
+    #     self.cursor.execute('SELECT slot_tempo FROM Appointments WHERE patient=?', (user_id,))
     #     hours=self.cursor.fetchall()
     #     self.combobox_1 = ctk.CTkComboBox(master=self.scrollable_frame4,
     #                                     values = [str(hour[0]) for hour in hours])
     #     self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
     #     self.combobox_1.set("")
-    #     self.cursor.execute('SELECT doctor FROM Appointments WHERE patient=?', user_id)
+    #     self.cursor.execute('SELECT doctor FROM Appointments WHERE patient=?', (user_id,))
     #     doct=self.cursor.fetchall()
     #     self.combobox_2 = ctk.CTkComboBox(master=self.scrollable_frame4,
     #                                     values = [str(doc_str[0]) for doc_str in doct])

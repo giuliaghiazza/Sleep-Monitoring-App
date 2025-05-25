@@ -295,6 +295,7 @@ c.execute("""
         FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
     )
     """)
+# We could add a satisfaction questionnaire on the usage of the sensors
 
 
 c.execute("""CREATE TABLE IF NOT EXISTS VisitQuestionnaire(
