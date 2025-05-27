@@ -192,7 +192,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS Sensors(
           assigned_at_time DATETIME,
           patient integer,
           PrescriptionDevices_id integer,
-          wharehouse TEXT,
+          warehouse TEXT,
           location TEXT,
           FOREIGN KEY (PrescriptionDevices_id) REFERENCES PrescriptionDevices(PrescriptionDevices_id),
           FOREIGN KEY (patient) REFERENCES Patients(user_id)
@@ -312,8 +312,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS VisitQuestionnaire(
           stress text,
           notes text, 
           created_at DATETIME,
-          FOREIGN KEY (appointment_id) REFERENCES Appointments(appointment_id),
-          FOREIGN KEY (vquest_id) REFERENCES Appointments(appointment_id) 
+          FOREIGN KEY (appointment_id) REFERENCES Appointments(appointment_id)
           )
           """)
 # Questionnaires should be differentiated for different type of visits

@@ -2,6 +2,8 @@ import customtkinter as ctk
 from PIL import Image
 import sqlite3
 import datetime
+import tkinter.messagebox as messagebox
+
  
 # Dictionary to hold pages
 pages = {}
@@ -172,7 +174,6 @@ class VisitQuestionnaire(ctk.CTkFrame):
 
         self.quest_gui(self.user_id)
 
-
     def quest_gui(self, user_id):
 
         self.grid_columnconfigure(0, weight=0)  # Back button column
@@ -234,16 +235,16 @@ class VisitQuestionnaire(ctk.CTkFrame):
             self.entries[key] = entry
 
         # === Save Button ===
-        save_button = ctk.CTkButton(self, text="💾 Save", command=self.save_questionnaire)
+        save_button = ctk.CTkButton(self, text="💾 Save", command= self.save_questionnaire)
         save_button.grid(row=len(fields)+2, column=0, columnspan=2, pady=20)
 
     def save_questionnaire(self):
+        print("Saving questionnaire...")
         data = {key: entry.get() for key, entry in self.entries.items()}
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+        created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Insert into the database
         self.cursor.execute("""
-            INSERT INTO VisitQuestionnaire (
+            INSERT INTO VisitQuestionnaire(
                 appointment_id, pathologies, medication, physicalactivity, sleephours,
                 sleepquality, diet, tobacco, alcohol, stress, notes, created_at
             )
@@ -268,7 +269,8 @@ class VisitQuestionnaire(ctk.CTkFrame):
         """, (self.appointment_id,))
         
         self.conn.commit()
-        ctk.CTkLabel(self, text="✅ Questionnaire saved!", text_color="green").grid(row=100, column=0, columnspan=2, pady=10)
+        messagebox.showinfo("Success", "✅ Questionnaire saved successfully!")
+        self.controller.show_internal_page("main")  # Redirect to main page after saving
 
 class AppointmentPage(ctk.CTkFrame):
     def __init__(self, master, controller, user_id):

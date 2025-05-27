@@ -79,12 +79,12 @@ c.execute("""
 # === 4. Add Visit Report ===
 c.execute("""
     INSERT INTO VisitReport (appointment_id, file_path, created_at, doctor, patient)
-    VALUES (?, ?, datetime('now'), ?, ?)
-""", (6, 'Mario Rossi/Reports/VisitReports/visit_2024_04_15.pdf', 1, 8)) ## Here first visit
+    VALUES (?, ?, ?, ?, ?)
+""", (6, 'Mario Rossi/Reports/VisitReports/visit_2025_04_15.pdf', "2025-04-15", 1, 8)) ## Here first visit
 c.execute("""
     INSERT INTO VisitReport (appointment_id, file_path, created_at, doctor, patient)
-    VALUES (?, ?, datetime('now'), ?, ?)
-""", (7, 'Mario Rossi/Reports/VisitReports/visit_2024_04_30.pdf', 1, 8)) ## Here second one
+    VALUES (?, ?, ?, ?, ?)
+""", (7, 'Mario Rossi/Reports/VisitReports/visit_2025_04_30.pdf', "2025-04-30", 1, 8)) ## Here second one
 
 # === Sensor Performance === 
 c.execute("""

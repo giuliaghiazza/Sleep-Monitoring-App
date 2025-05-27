@@ -10,7 +10,7 @@ c.execute("""DELETE FROM Therapy;""")
 c.execute("""
     INSERT INTO Therapy(patient, drug1, dosage, duration, notes)
     VALUES (?, ?, ?, ?, ?)
-""", (8, 1, '0.125 mg at bedtime', 30, 'Start with low-dose Pramipexole for RLS. Titrate if needed.'))
+""", (8, 1, '0.125 mg at bedtime', 30, 'Start with low-dose Pramipexole for PLM. Titrate if needed.'))
 
 
 connection.commit()
