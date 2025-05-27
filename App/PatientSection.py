@@ -3,13 +3,142 @@ from PIL import Image
 import sqlite3
 import datetime
 import tkinter.messagebox as messagebox
+from DoctorSection import show_questionnaire_averages, show_pdf_in_new_window
+import subprocess
+import sys
+import os
 
- 
+DB_PATH = "App/Database/gui_database.db"
+
+
+def logout():
+    app_path = os.path.join(os.path.dirname(__file__), "App.py")
+    python = sys.executable
+    subprocess.Popen([python, app_path])  # Launch App.py as new process
+    sys.exit()  # Exit current GUI app
+
+
+def get_questions():
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("SELECT field_name, question_text, option_1, option_2, option_3, option_4, option_5 FROM QuestionDefinitions")
+        return c.fetchall()
+
+def last_submission_date(patient_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("SELECT date FROM PeriodicQuestionnaire WHERE patient_id = ? ORDER BY date DESC LIMIT 1", (patient_id,))
+        row = c.fetchone()
+        return datetime.datetime.strptime(row[0], "%Y-%m-%d") if row else None
+
+def save_submission(patient_id, answers):
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        fields = ", ".join(answers.keys())
+        placeholders = ", ".join(["?"] * len(answers))
+        values = list(answers.values())
+        
+        c.execute(f"""
+            INSERT INTO PeriodicQuestionnaire (patient_id, date, {fields})
+            VALUES (?, ?, {placeholders})
+        """, [patient_id, datetime.datetime.now().date()] + values)
+        conn.commit()
+
 # Dictionary to hold pages
 pages = {}
 doc_avail_vect=None
 #doc_sel='Select doctor'
-# === Other Pages === #
+
+class SettingsPage(ctk.CTkFrame):
+    def __init__(self, master, controller, user_id):
+        super().__init__(master, fg_color="white")
+        self.controller = controller
+        self.user_id = user_id
+        self.conn = sqlite3.connect('App/Database/gui_database.db')
+        self.cursor = self.conn.cursor()
+
+        self.inputs = {}  # To store input fields
+        self.setup_gui()
+
+    def setup_gui(self):
+        # Back button 
+        back_button = ctk.CTkButton(
+            master=self,
+            text="← Back",
+            width=60,
+            height=30,
+            font=ctk.CTkFont(size=14),
+            command=lambda: self.controller.show_internal_page("main")
+        )
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+
+        # Title
+        title = ctk.CTkLabel(self, text="Update Your Information", font=("Arial", 20))
+        title.grid(row=0, column=1, columnspan=2, pady=(20, 10))
+
+        # Fetch current user data
+        self.cursor.execute("SELECT Name, Surname, Codice_Fiscale, DoB, Gender, Age, City_of_Birth, Province_of_Birth, City_of_Recidency, Province_of_Recidency, CAP FROM Patients WHERE user_id=?", (self.user_id,))
+        data = self.cursor.fetchone()
+
+        fields = [
+            ("Name", "First Name"),
+            ("Surname", "Last Name"),
+            ("Codice_Fiscale", "Tax Code (CF)"),
+            ("DoB", "Date of Birth (YYYY-MM-DD)"),
+            ("Gender", "Gender"),
+            ("Age", "Age"),
+            ("City_of_Birth", "City of Birth"),
+            ("Province_of_Birth", "Province of Birth"),
+            ("City_of_Recidency", "City of Residency"),
+            ("Province_of_Recidency", "Province of Residency"),
+            ("CAP", "Postal Code"),
+        ]
+
+        for idx, (field, label) in enumerate(fields):
+            ctk.CTkLabel(self, text=label + ":", anchor="w").grid(row=idx + 1, column=0, padx=20, pady=5, sticky="w")
+            entry = ctk.CTkEntry(self, width=200)
+            if data:
+                entry.insert(0, str(data[idx]) if data[idx] is not None else "")
+            entry.grid(row=idx + 1, column=1, padx=20, pady=5, sticky="w")
+            self.inputs[field] = entry
+
+        # Submit Button
+        submit_btn = ctk.CTkButton(self, text="Save Changes", command=self.save_changes)
+        submit_btn.grid(row=len(fields) + 1, column=0, columnspan=2, pady=20)
+
+    def save_changes(self):
+        updated_data = {field: entry.get() for field, entry in self.inputs.items()}
+
+        try:
+            # Input validation example for date and age
+            datetime.datetime.strptime(updated_data["DoB"], "%Y-%m-%d")
+            updated_data["Age"] = int(updated_data["Age"])
+            updated_data["CAP"] = int(updated_data["CAP"])
+
+            # Update statement
+            self.cursor.execute("""
+                UPDATE Patients SET
+                    Name=?,
+                    Surname=?,
+                    Codice_Fiscale=?,
+                    DoB=?,
+                    Gender=?,
+                    Age=?,
+                    City_of_Birth=?,
+                    Province_of_Birth=?,
+                    City_of_Recidency=?,
+                    Province_of_Recidency=?,
+                    CAP=?
+                WHERE user_id=?
+            """, (*updated_data.values(), self.user_id))
+            self.conn.commit()
+            messagebox.showinfo("Success", "Information updated successfully.")
+
+        except ValueError:
+            messagebox.showerror("Error", "Please ensure Age and Date of Birth are valid.")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
+
 class Main(ctk.CTkFrame):
     def __init__(self, master, controller, user_id):
         super().__init__(master, fg_color="white")
@@ -23,7 +152,7 @@ class Main(ctk.CTkFrame):
         self.appointments_container = self
 
         # === Header Title ===
-        title_label = ctk.CTkLabel(self, text="Welcome, John!", font=ctk.CTkFont(size=22, weight="bold"))
+        title_label = ctk.CTkLabel(self, text="Welcome, Mario!", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=0, pady=(20, 10))
 
         # === Profile Picture ===
@@ -90,22 +219,39 @@ class Main(ctk.CTkFrame):
 
         menu_button = ctk.CTkButton(
             master=menu_bar,
-            text="☰ Menu",
+            text="🌣 Settings",
             width=100,
             height=35,
             fg_color="#57cc99",
             hover_color="#38a3a5",
             font=ctk.CTkFont(size=14),
-            command=lambda: print("Menu opened")
+            command=lambda: self.controller.show_internal_page("settings")
+        )
+        menu_button.pack()   
+
+        # === Bottom Menu ===
+        menu_bar = ctk.CTkFrame(self, fg_color="transparent")
+        menu_bar.grid(row=101, column=1, pady=0, sticky = "e")
+
+        menu_button = ctk.CTkButton(
+            master=menu_bar,
+            text="↪ Logout",
+            width=100,
+            height=35,
+            fg_color="#57cc99",
+            hover_color="#38a3a5",
+            font=ctk.CTkFont(size=14),
+            command= logout
         )
         menu_button.pack()    
     
     def show_appointments(self, user_id):
         for widget in self.appointments_container.winfo_children():
             grid_info = widget.grid_info()
-            if 4 <= int(grid_info.get("row", 0)) < 500 and int(grid_info.get("column", 0)) == 1:
+            if 4 <= int(grid_info.get("row", 0)) < 100 and int(grid_info.get("column", 0)) == 1:
                 widget.destroy()
 
+        today = "2025-05-29"
         query = f"""
             SELECT 
                 A.slot_tempo, 
@@ -116,10 +262,11 @@ class Main(ctk.CTkFrame):
             FROM Appointments A
             JOIN Doctors D ON A.doctor = D.user_id
             JOIN Patients P ON A.patient = P.user_id
-            WHERE P.user_id = ?
+            WHERE P.user_id = ? 
+            AND A.slot_tempo >= ?
             """
 
-        self.cursor.execute(query, (user_id,))
+        self.cursor.execute(query, (user_id, today))
         appointments = self.cursor.fetchall()
 
         if not appointments:
@@ -634,14 +781,339 @@ class AppointmentPage(ctk.CTkFrame):
         self.sidebar_container.grid_remove()
         self.grid_columnconfigure(0, weight=0)
         
+class PeriodicQuestionnaire(ctk.CTkFrame):
+    def __init__(self, master, controller, patient_id):
+        super().__init__(master, fg_color="white")
+        self.master = master
+        self.patient_id = patient_id
+        self.controller = controller
+        self.answer_vars = {}
+        scrollable_frame = ctk.CTkScrollableFrame(self, width=750, height=550, fg_color="white")
+        scrollable_frame.pack(pady=20, padx=10, fill="both", expand=True)
+        self.grid_rowconfigure(1, weight=1)  # Allow the scrollable frame to expand
 
+        self.build_ui(scrollable_frame)
+
+    def build_ui(self, parent):
+        self.grid_columnconfigure(0, weight=1)  # Allow column to expand
+
+        # Back button 
+        back_button = ctk.CTkButton(
+            master=parent,
+            text="← Back",
+            width=60,
+            height=30,
+            font=ctk.CTkFont(size=14),
+            fg_color="#57c2a8",
+            hover_color="#034172",
+            command=lambda: self.controller.show_internal_page("data")
+        )
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+
+        # Check last submission
+        recent = last_submission_date(self.patient_id)
+        if recent and (datetime.datetime.now().date() - recent.date()).days < 3:
+            label = ctk.CTkLabel(
+                master=parent,
+                text="You already completed the questionnaire for this period.",
+                font=("Arial", 16)
+            )
+            label.grid(row=1, column=0, padx=20, pady=20, sticky="n")
+            return
+
+        row = 2
+        for i, (field_name, text, *options) in enumerate(get_questions()):
+            question_label = ctk.CTkLabel(
+                master=parent,
+                text=f"{i+1}. {text}",
+                anchor="w",
+                font=("Arial", 14),
+                wraplength=600,  # to handle long questions
+                justify="left"
+            )
+            question_label.grid(row=i*6, column=1, columnspan=2, sticky="w", pady=(10, 2))
+
+            var = ctk.IntVar(value=0)
+            self.answer_vars[field_name] = var
+
+            for j, opt in enumerate(options):
+                rb = ctk.CTkRadioButton(
+                    master=parent,
+                    text=opt,
+                    variable=var,
+                    value=j + 1
+                )
+                rb.grid(row=i*6 + j + 1, column=1, sticky="w", padx=(20, 0), pady=1)
+            row = row + i + j + 1
+        
+        # Submit Button
+        submit_btn = ctk.CTkButton(
+            master=parent,
+            text="Submit",
+            command=self.submit
+        )
+        submit_btn.grid(row=row, column=1, pady=(10, 500))
+
+
+    def submit(self):
+        if not all(var.get() != 0 for var in self.answer_vars.values()):
+            messagebox.showerror("Error", "Answer all questions.")
+            return
+
+        answers = {k: v.get() for k, v in self.answer_vars.items()}
+        save_submission(self.patient_id, answers)
+        messagebox.showinfo("Success", "Questionnaire successfully submitted!")
+        self.destroy()
         
 class HealthDataPage(ctk.CTkFrame):
-    def __init__(self, master, controller, user_id):
-        super().__init__(master)
-        self.controller = controller
-        self.user_id=user_id
-        ctk.CTkLabel(self, text="📂 Health Data Page", font=ctk.CTkFont(size=18)).pack(pady=40)
+    def submit(self):
+        if not all(var.get() != 0 for var in self.answer_vars.values()):
+            messagebox.showerror("Error", "Answer all questions.")
+            return
+
+        answers = {k: v.get() for k, v in self.answer_vars.items()}
+        save_submission(self.patient_id, answers)
+        messagebox.showinfo("Success", "Questionnaire successfully submitted, come back in 3 days!")
+        self.destroy()
+
+    def __init__(self, master, controller, patient_id, return_to="main"):
+            super().__init__(master, fg_color="white")
+            self.return_to = return_to  
+            self.controller = controller
+            self.patient_id = patient_id
+            self.conn = sqlite3.connect('App/Database/gui_database.db')
+            self.cursor = self.conn.cursor()
+            self.answer_vars = {}
+
+            scrollable_frame = ctk.CTkScrollableFrame(self, width=750, height=550, fg_color="white")
+            scrollable_frame.pack(pady=20, padx=10, fill="both", expand=True)
+            scrollable_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+            self.patientgui(scrollable_frame, patient_id)
+
+    def patientgui(self, parent, patient_id):
+            print(patient_id)
+
+            # === Back Button in Top-Left ===
+            back_button = ctk.CTkButton(
+                master=parent,
+                text="← Back",
+                width=60,
+                height=30,
+                font=ctk.CTkFont(size=14),
+                fg_color="#57c2a8",
+                hover_color="#034172",
+                command=lambda: self.controller.show_internal_page(self.return_to)
+            )
+            back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+
+            # === Header Title ===
+            ctk.CTkLabel(
+                    parent,
+                    text="My Data:",
+                    font=ctk.CTkFont(size=20, weight="bold")
+                ).grid(row=0, column=0, padx=10, pady=(10, 5), sticky="e")         
+
+            # === Periodic Questionnaire === 
+            quest_button = ctk.CTkButton(
+                master=parent,
+                text="! Compile Periodic Questionnaire",
+                width=60,
+                height=30,
+                font=ctk.CTkFont(size=14),
+                fg_color="#ffbc59",
+                hover_color="#e3aa00",
+                command=lambda: self.controller.show_questionnaire_page(self.master, self.controller, patient_id)
+            )
+            quest_button.grid(row=0, column=1, padx=(10, 5), pady=(20, 10), sticky="e")
+
+            # === Fetch patient data ===
+            self.cursor.execute("""
+                SELECT P.Name, P.Surname, P.Age, P.Gender, P.Diagnosis
+                FROM Patients P
+                WHERE P.user_id = ?
+            """, (patient_id,))
+            patient = self.cursor.fetchone()
+            name, surname, age, gender, diagnosis = patient
+
+            row = 1
+            
+            # # Patient info
+            # ctk.CTkLabel(
+            #     parent,
+            #     text=f"🧑‍⚕️ {name} {surname} — Age: {age} — Gender: {gender}",
+            #     font=ctk.CTkFont(size=16, weight="bold")
+            # ).grid(row=row, column=0, columnspan=2, padx=10, pady=10, sticky="w")
+
+            # row += 1
+            
+            # Diagnosis
+            diag_text = diagnosis if diagnosis else "No diagnosis available."
+            ctk.CTkLabel(
+                parent,
+                text=f"📋 Diagnosis: {diag_text}",
+                font=ctk.CTkFont(size=14)
+            ).grid(row=row, column=0, columnspan=2, padx=10, pady=5, sticky="w")
+
+            row += 1
+            # Prescribed therapies
+            self.cursor.execute("""
+                SELECT D.name, T.dosage, T.duration, T.notes
+                FROM Therapy T
+                JOIN Drugs D ON T.drug1 = D.drug_id
+                WHERE T.patient = ?
+            """, (patient_id,))
+            therapies = self.cursor.fetchall()
+
+            if therapies:
+                ctk.CTkLabel(
+                    parent,
+                    text="💊 Prescribed Medications:",
+                    font=ctk.CTkFont(size=14, weight="bold")
+                ).grid(row=row, column=0, padx=10, pady=(10, 5), sticky="w")                
+                row += 1
+
+                for med in therapies:
+                    info = f"• {med[0]} — {med[1]} for {med[2]} days\n   Note: {med[3]}"
+                    ctk.CTkLabel(
+                        parent,
+                        text=info,
+                        font=ctk.CTkFont(size=13)
+                    ).grid(row=row, column=0, columnspan=2, padx=15, sticky="w")
+                    row += 1
+            else:
+                pass
+
+            # === Reports ===
+            today = "2025-05-29"
+            self.cursor.execute("""
+                SELECT appointment_id, file_path, created_at
+                FROM VisitReport
+                WHERE patient = ? 
+                AND created_at <= ?
+                ORDER BY created_at DESC
+            """, (patient_id, today))
+            visit_reports = self.cursor.fetchall()
+
+            self.cursor.execute("""
+                SELECT snreport_id, file_path, created_at
+                FROM SensorsReport
+                WHERE patient = ?
+                ORDER BY created_at DESC
+            """, (patient_id,))
+            sensor_reports = self.cursor.fetchall()
+
+            ctk.CTkLabel(
+                parent,
+                text="📈 Visit Reports:",
+                font=ctk.CTkFont(size=14, weight="bold")
+            ).grid(row=row, column=0, columnspan=2, padx=10, pady=(15, 5), sticky="w")
+
+            row += 1
+
+            if visit_reports:
+                columns_per_row = 4
+                sticky = ["e", "w"]
+                for i, (appointment_id, file_path, created_at) in enumerate(sensor_reports):
+                    display_text = f"At-home — {created_at.split(' ')[0]}"
+                    ctk.CTkButton(
+                        parent,
+                        text=f"📄 {display_text}",
+                        fg_color="#57cc99", 
+                        hover_color="#38a3a5",
+                        command=lambda path=file_path: show_pdf_in_new_window(path)
+                    ).grid(row=row + i // columns_per_row, column=i % columns_per_row, padx=10, pady=5, sticky=sticky)
+                row += (len(sensor_reports) - 1) // columns_per_row + 1
+            else:
+                ctk.CTkLabel(
+                    parent,
+                    text="No sensor reports available.",
+                    font=ctk.CTkFont(size=13, slant="italic")
+                ).grid(row=row, column=0, padx=10, pady=5, sticky="w")
+                row += 1
+
+
+            ctk.CTkLabel(
+                parent,
+                text="📈 Sensors Reports:",
+                font=ctk.CTkFont(size=14, weight="bold")
+            ).grid(row=row, column=0, columnspan=2, padx=10, pady=(15, 5), sticky="w")
+
+            row += 1
+
+            if sensor_reports:
+                columns_per_row = 4
+                sticky = ["e", "w"]
+                for i, (report_id, file_path, created_at) in enumerate(sensor_reports):
+                    display_text = f"At-home — {created_at.split(' ')[0]}"
+                    ctk.CTkButton(
+                        parent,
+                        text=f"📄 {display_text}",
+                        fg_color="#57cc99", 
+                        hover_color="#38a3a5",
+                        command=lambda path=file_path: show_pdf_in_new_window(path)
+                    ).grid(row=row + i // columns_per_row, column=i % columns_per_row, padx=10, pady=5, sticky=sticky)
+                row += (len(sensor_reports) - 1) // columns_per_row + 1
+            else:
+                ctk.CTkLabel(
+                    parent,
+                    text="No sensor reports available.",
+                    font=ctk.CTkFont(size=13, slant="italic")
+                ).grid(row=row, column=0, padx=10, pady=5, sticky="w")
+                row += 1
+
+            # === Graphs ===
+            image_label = None
+
+            def update_graph_image(choice):
+                image_path = {
+                    "Last 2 Weeks": "Mario Rossi/Graphs/two_weeks.png",
+                    "Last Month": "Mario Rossi/Graphs/last_month.png",
+                    "All Time": "Mario Rossi/Graphs/last_month.png",
+                }.get(choice, "Mario Rossi/Graphs/two_weeks.png")
+                # Should put the fetched name instead of manually, it is to test. The graph should also be shown directly by python
+                try:
+                    img = ctk.CTkImage(light_image=Image.open(image_path), size=(300, 200))
+                    image_label.configure(image=img, text="")
+                    image_label.image = img
+                except Exception:
+                    image_label.configure(text=f"Image not found: {image_path}", image=None)
+                    image_label.image = None
+
+            ctk.CTkLabel(
+                parent,
+                text="📈 PLMI Evolution:",
+                font=ctk.CTkFont(size=14, weight="bold")
+            ).grid(row=row, column=0, columnspan=2, padx=10, pady=(15, 5), sticky="w")
+
+            row += 1
+
+            ctk.CTkLabel(
+                parent,
+                text="Select Timeframe:",
+                font=ctk.CTkFont(size=13)
+            ).grid(row=row, column=0, padx=10, pady=(10, 0), sticky="w")
+
+            timeframe_dropdown = ctk.CTkOptionMenu(
+                parent,
+                values=["Last 2 Weeks", "Last Month", "All Time"],
+                fg_color="#38a3a5", 
+                button_color="#57cc99",
+                button_hover_color="#38a3a5",
+                command=update_graph_image
+            ) 
+            timeframe_dropdown.grid(row=row, column=0, padx=10, pady=5, sticky="e")
+            timeframe_dropdown.set("Last 2 Weeks")
+            row += 1
+
+            image_label = ctk.CTkLabel(parent, text="")
+            image_label.grid(row=row, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+            update_graph_image("Last 2 Weeks")
+            row += 1
+
+            # === Questionnaire Averages ===
+            show_questionnaire_averages(parent, self, row, patient_id)
+            row += 1
 
 class EmergencyPage(ctk.CTkFrame):
     def __init__(self, master,controller, user_id):
@@ -1071,7 +1543,8 @@ class Home_patPage(ctk.CTkFrame):
             "appointment": AppointmentPage(self, self, self.user_id),
             "data": HealthDataPage(self, self, self.user_id),
             "emergency": EmergencyPage(self, self, self.user_id),
-            "visitquest": VisitQuestionnaire(self, self, self.user_id)
+            "visitquest": VisitQuestionnaire(self, self, self.user_id),
+            "settings": SettingsPage(self, self, self.user_id),
         }
 
         print("Pagine create:", list(self.pages.keys()))
@@ -1083,4 +1556,18 @@ class Home_patPage(ctk.CTkFrame):
         for page in self.pages.values():
             page.grid_forget()
         self.pages[page_name].grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+    def show_questionnaire_page(self, master, controller, patient_id):
+        # Hide or destroy the current page if it exists
+        current_page = self.pages.get("current")
+        if current_page is not None:
+            current_page.grid_forget()  # or use current_page.destroy() if you want to fully delete it
+
+        # Create and show the new page
+        questionnaire_page = PeriodicQuestionnaire(master, controller, patient_id)
+        questionnaire_page.grid(row=0, column=0, sticky="nsew")
+        questionnaire_page.tkraise()
+
+        # Update pages tracking
+        self.pages["current"] = questionnaire_page
 

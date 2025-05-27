@@ -285,16 +285,19 @@ c.execute("""CREATE TABLE IF NOT EXISTS SensorsPerformanceReport(
 c.execute("""
     CREATE TABLE IF NOT EXISTS SensorQuestionnaire (
         squest_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        patient INTEGER,
-        sensor_id INTEGER, 
-        session_id INTEGER, 
+        patient INTEGER NOT NULL,
+        sensor_id INTEGER NOT NULL, 
+        session_id INTEGER NOT NULL,
+        date DATETIME NOT NULL, 
         created_at DATETIME,
         malfunction TEXT,
+        
         FOREIGN KEY (patient) REFERENCES Patients(user_id),
         FOREIGN KEY (sensor_id) REFERENCES Sensors(Code_device),
         FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
     )
     """)
+# SATISFACTION? 
 # We could add a satisfaction questionnaire on the usage of the sensors
 
 
@@ -328,6 +331,7 @@ c.execute("""CREATE TABLE PeriodicQuestionnaire (
                 daytime_sleepiness INTEGER, 
                 sleep_hygene INTEGER, 
                 stress_level INTEGER,
+                sensor_satifaction INTEGER,
                 FOREIGN KEY (patient_id) REFERENCES Patients(user_id)
             )
           """)

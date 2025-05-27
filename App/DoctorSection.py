@@ -9,9 +9,21 @@ import sqlite3
 import datetime
 from datetime import datetime
 import os
+import subprocess
+import sys
+
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
+
+DB_PATH = "App/Database/gui_database.db"
+
+
+def logout():
+    app_path = os.path.join(os.path.dirname(__file__), "App.py")
+    python = sys.executable
+    subprocess.Popen([python, app_path])  # Launch App.py as new process
+    sys.exit()  # Exit current GUI app
 
 
 def show_pdf_in_new_window(pdf_path):
@@ -160,6 +172,9 @@ def show_questionnaire_averages(parent, controller, row, patient_id):
                 lbl.grid(row=row, column=0, columnspan=2, padx=15, pady=2, sticky="w")
                 questionnaire_labels.append(lbl)
                 row += 1
+            # --- Padding after labels ---
+            ctk.CTkLabel(parent, text="", font=ctk.CTkFont(size=13)).grid(row=row, column=0, columnspan=2, pady=(10, 50))
+        
         # --- Dropdown for timeframe ---
         timeframe_dropdown = ctk.CTkOptionMenu(
             parent,
@@ -844,17 +859,27 @@ class Main(ctk.CTkFrame):
         self.appointments_container = parent
         parent.grid_columnconfigure((0, 1, 2), weight=1)
 
-        # === Header & Profile ===
-        ctk.CTkLabel(parent, text="Welcome, Doctor!", font=ctk.CTkFont(size=20, weight="bold")).grid(row=0, column=1, columnspan=2, pady=(20, 5), sticky="w")
-        
+        # === Header & Profile Card ===
+        header_frame = ctk.CTkFrame(parent, fg_color="#f4f4f4", corner_radius=12)
+        header_frame.grid(row=0, column=0, columnspan=3, padx=10, pady=(15, 5), sticky="ew")
+        header_frame.grid_columnconfigure((0, 1), weight=1)
+
         try:
-            profile_img = ctk.CTkImage(light_image=Image.open("App/doctorprofile.png"), size=(50, 50))
-            profile_pic = ctk.CTkLabel(parent, image=profile_img, text="")
-            profile_pic.grid(row=0, column=0, pady=(20, 10), sticky="ew")
+            profile_img = ctk.CTkImage(light_image=Image.open("App/doctorprofile.png"), size=(60, 60))
+            profile_pic = ctk.CTkLabel(header_frame, image=profile_img, text="")
+            profile_pic.grid(row=0, column=0, padx=10, pady=10, sticky="w")
         except:
             pass
 
-        ctk.CTkLabel(parent, text="📅 My Appointments:", font=ctk.CTkFont(size=16, weight="bold")).grid(row=1, column=0, pady=(10, 10))
+        ctk.CTkLabel(
+            header_frame, 
+            text="Welcome, Doctor!", 
+            font=ctk.CTkFont(size=20, weight="bold"), 
+            text_color="#222"
+        ).grid(row=0, column=0, sticky="e", padx=10)
+
+
+        ctk.CTkLabel(parent, text="My Appointments:", font=ctk.CTkFont(size=16, weight="bold")).grid(row=1, column=0, columnspan = 3, padx = 30, pady=(10, 10), sticky = "w")
 
         # === Filter Buttons ===
         button_config = {
@@ -876,6 +901,7 @@ class Main(ctk.CTkFrame):
                 **button_config
             ).grid(row=3, column=i, padx=5, pady=10, sticky = sticky[i])
 
+        self.show_appointments("today", user_id)
         self.manage_btn = ctk.CTkButton(
             self.appointments_container,
             text="🛠 Manage Appointments",
@@ -899,19 +925,34 @@ class Main(ctk.CTkFrame):
         self.patient_id_map = {full_name: user_id for user_id, full_name in patients}
         patient_names = list(self.patient_id_map.keys())  # Names shown in dropdown
 
-        ctk.CTkLabel(parent, text="🗂️ My Patients:", font=ctk.CTkFont(size=16, weight="bold")).grid(row=1001, column=0, pady=(10,500), sticky = "w")
+        ctk.CTkLabel(parent, text="My Patients:", font=ctk.CTkFont(size=16, weight="bold")).grid(row=1001, column=0, sticky = "w", padx = 30, pady=(10,500))
 
         self.optionmenu = ctk.CTkOptionMenu(parent,
                                             text_color = "#38a3a5",
                                             corner_radius = 3, 
                                             fg_color= "#38a3a5",
-                                            button_color ="#38a3a5",
-                                            button_hover_color="#57cc99",
+                                            button_color ="#57cc99",
+                                            button_hover_color="#38a3a5",
                                             values=patient_names, 
                                             command=lambda selected_name: self.optionmenu_callback(selected_name, user_id))
         self.optionmenu.grid(row=1001, column=1, padx=5, pady=(10,500), sticky="ew")
 
-    
+        # === Bottom Menu ===
+        menu_bar = ctk.CTkFrame(parent, fg_color="transparent")
+        menu_bar.grid(row=0, column=2, pady=40)
+
+        menu_button = ctk.CTkButton(
+            master=menu_bar,
+            text="↪ Logout",
+            width=100,
+            height=35,
+            fg_color="#38a3a5",
+            hover_color="#57cc99",
+            font=ctk.CTkFont(size=14),
+            command= logout
+        )
+        menu_button.pack()
+
     def optionmenu_callback(self, selected_name, user_id):
         patient_id = self.patient_id_map[selected_name]
         self.controller.show_patient_page(user_id, patient_id)

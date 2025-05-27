@@ -25,18 +25,24 @@ class LoginPage(ctk.CTkFrame):
         
 
     def login_gui(self):
-        # === Header Title ===
-        title_label = ctk.CTkLabel(self, text="Login", font=ctk.CTkFont(size=22, weight="bold"))
-        title_label.grid(row=0, column=0, pady=(20, 10))
+        
+        # === Logo === 
+        logo = ctk.CTkImage(Image.open("App/Logo.png"), size=(220, 80))
+        logo_label = ctk.CTkLabel(self, image=logo, text="")
+        logo_label.grid(row=1, column=0, pady=(90, 10))  # Adjust padding as needed
+
+        # # === Header Title ===
+        # title_label = ctk.CTkLabel(self, text="Login", font=ctk.CTkFont(size=22, weight="bold"))
+        # title_label.grid(row=1, column=0, pady=(20, 10))
 
         # === Labels ===
-        login_lable=ctk.CTkLabel(self, 
-                                text='Insert Username and Password', 
-                                font=('Arial',14),
-                                width=300,
-                                height=30
-                                )
-        login_lable.grid(row=1, column=0, padx=20, pady=10)   #numeri da rivedere
+        # login_lable=ctk.CTkLabel(self, 
+        #                         text='Insert Username and Password', 
+        #                         font=('Arial',14),
+        #                         width=300,
+        #                         height=30
+        #                         )
+        # login_lable.grid(row=2, column=0, padx=20, pady=10)   #numeri da rivedere
         
         # === Fill in fields ===
         self.user_entry=ctk.CTkEntry(self,                                                     
@@ -54,32 +60,35 @@ class LoginPage(ctk.CTkFrame):
                                 font=('Arial',14),
                                 show='*'
                                 )
-        self.pass_entry.grid(row=3, column=0, pady=(20, 10))    #numeri da rivedere
+        self.pass_entry.grid(row=3, column=0, pady=(10, 10))    #numeri da rivedere
 
         # === Buttons ===
+        button_frame = ctk.CTkFrame(self, fg_color="transparent")
+        button_frame.grid(row=4, column=0, pady=(20, 10))  # Keep it centered
+
         login_button = ctk.CTkButton(
-            master=self,
+            master=button_frame,
             text="Log-in",     #da aggiungere icona se vogliamo metterne una
-            height=50,
-            width=120,
-            fg_color="#38a3a5",
-            hover_color="#57cc99",
-            font=ctk.CTkFont(size=16),
-            command=self.login_callback
-        )
-        login_button.grid(row=4, column=0, padx=35, pady=10)    #numeri da rivedere
- 
-        signin_button = ctk.CTkButton(
-            master=self,
-            text="Sign-in",     #da aggiungere icona se vogliamo metterne una
             height=50,
             width=120,
             fg_color="#57cc99",
             hover_color="#38a3a5",
             font=ctk.CTkFont(size=16),
+            command=self.login_callback
+        )
+        login_button.pack(side="right", padx=10)    #numeri da rivedere
+ 
+        signin_button = ctk.CTkButton(
+            master=button_frame,
+            text="Sign-in",     #da aggiungere icona se vogliamo metterne una
+            height=50,
+            width=120,
+            fg_color="#38a3a5",
+            hover_color="#57cc99",
+            font=ctk.CTkFont(size=16),
             command=lambda: self.controller.show_page("Sign-in")
         )
-        signin_button.grid(row=5, column=0, padx=35, pady=10)    #numeri da rivedere, posso fare così per affiancare 2 bottoni?
+        signin_button.pack(side="left", padx=10)    #numeri da rivedere, posso fare così per affiancare 2 bottoni?
 
         # === Outcome Label ===
         self.outcome_label=ctk.CTkLabel(self,
@@ -87,7 +96,7 @@ class LoginPage(ctk.CTkFrame):
                                         font=('Arial',12),
                                         width=300,
                                         height=30)      #larghezza come finestra se so che non ho altro sulla riga
-        self.outcome_label.grid(row=6, column=0, padx=35, pady=10)
+        self.outcome_label.grid(row=5, column=0, padx=35, pady=10)
 
     #Query database
     def login_callback(self):
@@ -358,7 +367,8 @@ class App():
         
 
 # Start the app
-App()
+if __name__ == "__main__":
+    App()
 
 
 #per ogni nuova pagina:

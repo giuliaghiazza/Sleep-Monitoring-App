@@ -13,19 +13,23 @@ questions = [
      "Very poor", "Poor", "Average", "Good", "Excellent"),
 
     ("trouble_falling_asleep", "Did you have trouble falling asleep?",
-     "Very poor", "Poor", "Normal", "Good", "Very good"),
+     "Couldn't fall asleep", "Yes, a bit", "Just sometimes", "Almost never", "No trouble at all"),
 
     ("sleep_disruption", "Did you wake up during the night?",
-     "Never", "Just briefly", "1 or 2 times", "Many times", "I couldn't stay asleep"),
+     "I couldn't stay asleep", "Many times", "1 or 2 times", "Just briefly", "Never"),
 
     ("daytime_sleepiness", "How tired did you feel today?",
      "Extremely tired", "Tired", "Moderate", "Slightly tired", "Not tired at all"),
 
     ("sleep_hygene", "Did you follow a good bedtime routine?",
-     "Extremely tired", "Tired", "Moderate", "Slightly tired", "Not tired at all"),
+     "Almost never", "Only a bit", "Sometimes", "Yes, almost everyday", "Always"),
 
     ("stress_level", "What was your stress level today?",
-     "Very high", "High", "Moderate", "Low", "Very low")
+     "Very high", "High", "Moderate", "Low", "Very low"), 
+
+    ("sensor_satifaction", "How comfortable was using the sensor to sleep?",
+     "Very uncomfortable", "A little bit uncomfortable", "Medium", "Comfortable", "Very comfortable")
+
 ]
 
 cursor.executemany("""
@@ -36,24 +40,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
 
 
 entries = [
-    ('2025-04-05', 3, 4, 3, 2, 3, 4, 2),
-    ('2025-04-10', 2, 2, 3, 3, 4, 2, 4),
-    ('2025-04-20', 3, 3, 4, 2, 2, 4, 3),
-    ('2025-04-30', 4, 5, 4, 1, 2, 3, 4),
-    ('2025-05-05', 3, 3, 3, 3, 3, 3, 4),
-    ('2025-05-10', 2, 2, 2, 4, 4, 2, 5),
-    ('2025-05-15', 4, 4, 4, 2, 2, 3, 3),
-    ('2025-05-18', 3, 4, 3, 2, 3, 3, 4),
-    ('2025-05-21', 5, 5, 4, 1, 1, 2, 4),
-    ('2025-05-23', 3, 3, 3, 3, 3, 3, 3),
+    ('2025-04-05', 2, 2, 2, 2, 2, 2, 2, 3),
+    ('2025-04-10', 2, 2, 2, 2, 2, 2, 2, 3),
+    ('2025-04-20', 2, 3, 2, 2, 2, 3, 2, 4),
+    ('2025-04-30', 3, 2, 3, 3, 3, 3, 2, 5),
+    ('2025-05-05', 3, 3, 3, 3, 3, 4, 3, 4),
+    ('2025-05-10', 3, 4, 4, 3, 4, 4, 3, 5),
+    ('2025-05-15', 4, 4, 4, 4, 4, 3, 4, 5),
+    ('2025-05-18', 4, 4, 5, 4, 5, 4, 4, 5),
+    ('2025-05-21', 5, 5, 4, 5, 4, 5, 4, 4),
+    ('2025-05-23', 5, 5, 5, 5, 5, 5, 5, 5),
 ]
 
-for date, sd, sq, tfa, sdi, ds, sh, sl in entries:
+for date, sd, sq, tfa, sdi, ds, sh, sl, ss in entries:
     cursor.execute("""
         INSERT INTO PeriodicQuestionnaire (
-            patient_id, date, sleep_duration, sleep_quality, trouble_falling_asleep, sleep_disruption, daytime_sleepiness, sleep_hygene, stress_level
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (8, date, sd, sq, tfa, sdi, ds, sh, sl))
+            patient_id, date, sleep_duration, sleep_quality, trouble_falling_asleep, sleep_disruption, daytime_sleepiness, sleep_hygene, stress_level, sensor_satifaction
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (8, date, sd, sq, tfa, sdi, ds, sh, sl, ss))
 
 
 conn.commit()

@@ -4,7 +4,17 @@ import sqlite3
 import datetime
 import tkinter.messagebox as messagebox
 
-DB_PATH = 'App/Database/gui_database.db'
+import os
+import subprocess
+import sys
+DB_PATH = "App/Database/gui_database.db"
+
+
+def logout():
+    app_path = os.path.join(os.path.dirname(__file__), "App.py")
+    python = sys.executable
+    subprocess.Popen([python, app_path])  # Launch App.py as new process
+    sys.exit()  # Exit current GUI app
 
 class ManageSensors(ctk.CTkFrame): 
     def __init__(self, master, controller, user_id, sensor_id, main_page):
@@ -416,6 +426,22 @@ class Main(ctk.CTkFrame):
 
         title_label = ctk.CTkLabel(parent, text="Welcome technician!", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=1, columnspan=3, pady=(20, 10), sticky="ew")
+
+        # === Bottom Menu ===
+        menu_bar = ctk.CTkFrame(parent, fg_color="transparent")
+        menu_bar.grid(row=0, column=3, pady=20, sticky="e")
+
+        menu_button = ctk.CTkButton(
+            master=menu_bar,
+            text="↪ Logout",
+            width=100,
+            height=35,
+            fg_color="#38a3a5",
+            hover_color="#57cc99",
+            font=ctk.CTkFont(size=14),
+            command= logout
+        )
+        menu_button.pack()
 
         ctk.CTkLabel(parent, text="🛠 List of Sensors:", font=ctk.CTkFont(size=22, weight="bold"))\
             .grid(row=1, column=0, columnspan=3, padx = 30, pady=(10, 10), sticky="w")
