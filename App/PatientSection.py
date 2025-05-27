@@ -17,7 +17,6 @@ def logout():
     subprocess.Popen([python, app_path])  # Launch App.py as new process
     sys.exit()  # Exit current GUI app
 
-
 def get_questions():
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
@@ -951,7 +950,15 @@ class HealthDataPage(ctk.CTkFrame):
             diag_text = diagnosis if diagnosis else "No diagnosis available."
             ctk.CTkLabel(
                 parent,
-                text=f"📋 Diagnosis: {diag_text}",
+                text=f"📋 Diagnosis:",
+                font=ctk.CTkFont(size=14, weight="bold")
+            ).grid(row=row, column=0, columnspan=2, padx=10, pady=5, sticky="w")
+            row += 1
+
+            # Display diagnosis text
+            ctk.CTkLabel(
+                parent,
+                text=f"{diag_text}",
                 font=ctk.CTkFont(size=14)
             ).grid(row=row, column=0, columnspan=2, padx=10, pady=5, sticky="w")
 
@@ -1062,6 +1069,27 @@ class HealthDataPage(ctk.CTkFrame):
                 ).grid(row=row, column=0, padx=10, pady=5, sticky="w")
                 row += 1
 
+            # === Current status === 
+            self.cursor.execute("""
+                SELECT status
+                FROM Sensors 
+                WHERE patient = ?
+            """, (patient_id,))
+            status = self.cursor.fetchone()
+
+            status_text = status[0] if status else "No current status available."
+            ctk.CTkLabel(parent, text = "📊 Current Status:",
+                font=ctk.CTkFont(size=14, weight="bold")
+            ).grid(row=row, column=0, padx=10, pady=(15, 5), sticky="w")
+            row += 1
+            ctk.CTkLabel(
+                parent,
+                text=f"The sensors is: {status_text}",
+                font=ctk.CTkFont(size=13)
+            ).grid(row=row, column=0, columnspan=2, padx=10, pady=(5, 15), sticky="w")
+            row += 1
+
+                    
             # === Graphs ===
             image_label = None
 

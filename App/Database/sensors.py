@@ -5,7 +5,7 @@ c = connection.cursor()
 
 # Sensors Patients
 sensors = [
-    (1, "BioSTAMP", "EMG", 1, "Working", "U"),
+    (1, "BioSTAMP", "EMG", 8, "Working", "U"),
 ]
 
 for PrescriptionDevices_id, name, Signal_Acquired, patient, Status, availability in sensors:
