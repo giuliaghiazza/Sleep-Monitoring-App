@@ -426,85 +426,142 @@ class AppointmentPage(ctk.CTkFrame):
         self.setup_gui(self.user_id)
 
     def setup_gui(self, user_id):
-        self.grid_columnconfigure(0, weight=0)  # Back button column
+        self.grid_columnconfigure(0, weight=1)  # Back button column
         self.grid_columnconfigure(1, weight=1)  # Main content column
         
+        scrollable_frame_tot1 = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
+        scrollable_frame_tot1.grid(pady=20, padx=10)       #, fill="both", expand=True
+        scrollable_frame_tot1.grid_columnconfigure((0, 1), weight=1)
+
         # === Back Button in Top-Left ===
         back_button = ctk.CTkButton(
-            master = self,
+            master = scrollable_frame_tot1,
             text="← Back",
             width=60,
             height=30,
             font=ctk.CTkFont(size=14),
             command= lambda: self.controller.show_internal_page("main")
         )
-        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="e")
     
         # === Header Title ===
-        title_label = ctk.CTkLabel(self, text="📅 Book Appointment Page", font=ctk.CTkFont(size=18))
+        title_label = ctk.CTkLabel(scrollable_frame_tot1, text="📅 Book Appointment Page", font=ctk.CTkFont(size=18))
         title_label.grid(row=0, column=1, pady=(20, 10))
         self.conn = sqlite3.connect('App/Database/gui_database.db')
         self.cursor = self.conn.cursor()
+
+        self.frame = ctk.CTkFrame(scrollable_frame_tot1, fg_color="white")
+        self.frame.grid(row=1, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.frame.grid_columnconfigure(1, weight=1)
         
         #self.cursor.execute('SELECT DISTINCT doctor FROM appointment WHERE patient=?', (user,)) #user da passare
-        self.cursor.execute('SELECT DISTINCT slot_tempo FROM Appointments WHERE dispo=1')
-        n_availability_vect=self.cursor.fetchall()
-        n_availability= len(n_availability_vect)
-
+        #self.selected_value = None
+        selected_value = ctk.StringVar(value=None)
         self.selected_index=None
         self.selected_index1=None
         self.selected_index2=None
         
-        #tab prenotazione
-        self.tabview = ctk.CTkTabview(self, width=250)
-        self.tabview.grid(row=1, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)
-        self.tabview.add("Availability")
-        self.tabview.add("Doctor")
-        self.tabview.add("Submit")
-        self.tabview.tab("Availability").grid_columnconfigure(0, weight=1)
-        self.tabview.tab("Doctor").grid_columnconfigure(0, weight=1)
+        data_del_lable=ctk.CTkLabel(self.frame, 
+                                text='Filter for date', 
+                                font=('Arial',11),
+                                width=300,
+                                height=30
+                                )
+        data_del_lable.grid(row=0, column=0, padx=20, pady=10)
+        self.cursor.execute('SELECT DATE(slot_tempo) AS date_only FROM Appointments')
+        hours=self.cursor.fetchall()
+        self.combobox_1 = ctk.CTkOptionMenu(self.frame,
+                                        values = [str(hour[0]) for hour in hours],
+                                        #command=self.save_selection
+                                        variable=selected_value)
+        self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
+        #self.combobox_1.set("")
 
-        self.scrollable_frame = ctk.CTkScrollableFrame(self.tabview.tab("Availability"), label_text="Select time slot")
-        self.scrollable_frame.grid(row=2, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew")
-        self.scrollable_frame.grid_columnconfigure(0, weight=1)
+        if selected_value is None:
+            self.cursor.execute('SELECT DISTINCT slot_tempo FROM Appointments WHERE dispo=1')
+            n_availability_vect=self.cursor.fetchall()
+            n_availability= len(n_availability_vect)
+        else:
+            self.cursor.execute('SELECT DISTINCT slot_tempo FROM Appointments WHERE dispo=1 AND DATE(slot_tempo)=?', (selected_value.get(),))
+            n_availability_vect=self.cursor.fetchall()
+            n_availability= len(n_availability_vect)
+
+        #tab prenotazione
+        #self.tabview = ctk.CTkTabview(self, width=250)
+        #self.tabview.grid(row=1, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)
+        #self.tabview.add("Availability")
+        #self.tabview.add("Doctor")
+        #self.tabview.add("Submit")
+        #self.tabview.tab("Availability").grid_columnconfigure(0, weight=1)
+        #self.tabview.tab("Doctor").grid_columnconfigure(0, weight=1)
+
+        #self.scrollable_frame = ctk.CTkScrollableFrame(self.tabview.tab("Availability"), label_text="Select time slot")
+        #self.scrollable_frame.grid(row=2, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        #self.scrollable_frame.grid_columnconfigure(0, weight=1)
         self.scrollable_frame_radiobut = []
         self.radio_var = ctk.IntVar(value=0)
-        self.label_radio_group = ctk.CTkLabel(master=self.scrollable_frame, text="Available slots")
+        self.label_radio_group = ctk.CTkLabel(self.frame, text="Available slots")
         for i in range(n_availability):
             slot_text=n_availability_vect[i][0]
-            radio_button = ctk.CTkRadioButton(master=self.scrollable_frame, variable=self.radio_var, value=i, text=slot_text)
-            radio_button.grid(row=i, column=0, padx=10, pady=(0, 20))
+            radio_button = ctk.CTkRadioButton(self.frame, variable=self.radio_var, value=i, text=slot_text)
+            radio_button.grid(row=i+2, column=0, padx=10, pady=(0, 20))
             self.scrollable_frame_radiobut.append(radio_button)
-        slot_sel, doc_avail= self.get_selected_text()
+        slot_sel= self.get_selected_text()
+
+     
+        self.frame1 = ctk.CTkFrame(scrollable_frame_tot1, fg_color="white")
+        self.frame1.grid(row=2, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.frame1.grid_columnconfigure(1, weight=1)
+
+        selected_doc=ctk.StringVar(value=None)
+        data_del_lable1=ctk.CTkLabel(self.frame1, 
+                                text='Choose an available doctor', 
+                                font=('Arial',11),
+                                width=300,
+                                height=30
+                                )
+        data_del_lable1.grid(row=0, column=0, padx=20, pady=10)
+        self.cursor.execute('SELECT DISTINCT doctor FROM Appointments WHERE slot_tempo=? AND dispo=1', (slot_sel,))
+        docs=self.cursor.fetchall()
+        self.combobox_2 = ctk.CTkOptionMenu(self.frame1,
+                                        values = [str(do[0]) for do in docs],
+                                        #command=self.save_selection
+                                        variable=selected_doc
+                                        )
+        self.combobox_2.grid(row=1, column=0, padx=20, pady=(10, 10))
 
         ## QUA MANCA METTERE I DOTTORI DISPONIBILI, BISOGNA INVERTIRE CON I TIME SLOT
-        self.scrollable_frame1 = ctk.CTkScrollableFrame(self.tabview.tab("Doctor"), label_text="Select Doctor")
-        self.scrollable_frame1.grid(row=2, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew")
-        self.scrollable_frame1.grid_columnconfigure(0, weight=1)
-        self.scrollable_frame_radiobut1 = []
-        self.radio_var1 = ctk.IntVar(value=0)
-        self.label_radio_group = ctk.CTkLabel(master=self.scrollable_frame1, text="Available Doctors")
-        if doc_avail_vect is not None:
-            for j in range(doc_avail):
-                slot_text_doc=doc_avail_vect[j][0]
-                radio_button1 = ctk.CTkRadioButton(master=self.scrollable_frame1, variable=self.radio_var1, value=j, text=slot_text_doc)
-                radio_button1.grid(row=j+2, column=0, padx=10, pady=(0, 20))
-                self.scrollable_frame_radiobut1.append(radio_button1)
-            doc_sel= self.get_selected_text1()
+        #self.scrollable_frame1 = ctk.CTkScrollableFrame(self.frame1, label_text="Select Doctor")
+        #self.scrollable_frame1.grid(row=2, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        #self.scrollable_frame1.grid_columnconfigure(0, weight=1)
+        #self.scrollable_frame_radiobut1 = []
+        #self.radio_var1 = ctk.IntVar(value=0)
+        # self.label_radio_group = ctk.CTkLabel(self.frame1, text="Available Doctors")
+        # if doc_avail_vect is not None:
+        #     for j in range(doc_avail):
+        #         slot_text_doc=doc_avail_vect[j][0]
+        #         radio_button1 = ctk.CTkRadioButton(self.frame1, variable=self.radio_var1, value=j, text=slot_text_doc)
+        #         radio_button1.grid(row=j+2, column=0, padx=10, pady=(0, 20))
+        #         self.scrollable_frame_radiobut1.append(radio_button1)
+        #     doc_sel= self.get_selected_text1()
+
+        self.frame2 = ctk.CTkFrame(scrollable_frame_tot1, fg_color="white")
+        self.frame2.grid(row=3, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.frame2.grid_columnconfigure(1, weight=1)
 
         # === Buttons ===
         confirm_button = ctk.CTkButton(
-            master=self.tabview.tab("Submit"),
+            self.frame2,
             text="Book appointment",
             height=30,
             width=80,
             font=ctk.CTkFont(size=16),
-            command=lambda: self.conferma(slot_sel, doc_sel, user_id)
+            command=lambda: self.conferma(slot_sel, selected_doc, user_id)
         )
-        confirm_button.grid(row=3, column=2, padx=35, pady=10, sticky="ew")
+        confirm_button.grid(row=2, column=0, padx=35, pady=10, sticky="ew")
 
         print_button = ctk.CTkButton(
-            master=self.tabview.tab("Submit"),
+            self.frame2,
             text="Print receipt",
             height=30,
             width=80,
@@ -514,72 +571,72 @@ class AppointmentPage(ctk.CTkFrame):
         print_button.grid(row=3, column=0, padx=35, pady=10, sticky="ew")
 
         # === Labels ===
-        if self.selected_index is not None:
-            rec1_lable=ctk.CTkLabel(self.tabview.tab("Submit"), 
+        if slot_sel is not None:
+            rec1_lable=ctk.CTkLabel(self.frame2, 
                                     text=slot_sel, 
                                     font=('Arial',14),
                                     width=80,
                                     height=20
                                     )
-            rec1_lable.grid(row=1, column=0, padx=20, pady=10, columnspan=3)
+            rec1_lable.grid(row=0, column=0, padx=20, pady=10)
             confirm_button.configure(state="normal")
         else:
-            rec1_lable=ctk.CTkLabel(self.tabview.tab("Submit"), 
-                                    text='Select a time slot', 
+            rec1_lable=ctk.CTkLabel(self.frame2, 
+                                    text='Please select the visit timeslot', 
                                     font=('Arial',14),
                                     width=80,
                                     height=20
                                     )
-            rec1_lable.grid(row=1, column=0, padx=20, pady=10, columnspan=3)
+            rec1_lable.grid(row=0, column=0, padx=20, pady=10)
             confirm_button.configure(state="disabled")
         
-        if doc_avail_vect is not None:
-            rec2_lable=ctk.CTkLabel(self.tabview.tab("Submit"), 
-                                    text=doc_sel, 
+        if selected_doc is not None:
+            rec2_lable=ctk.CTkLabel(self.frame2, 
+                                    text=selected_doc, 
                                     font=('Arial',14),
                                     width=80,
                                     height=20
                                     )
-            rec2_lable.grid(row=2, column=0, padx=20, pady=10, columnspan=3)
+            rec2_lable.grid(row=1, column=0, padx=20, pady=10)
             print_button.configure(state="normal")
         else:
-            rec2_lable=ctk.CTkLabel(self.tabview.tab("Submit"), 
-                                    text='Select a doctor', 
+            rec2_lable=ctk.CTkLabel(self.frame2, 
+                                    text='Please select a doctor for the visit', 
                                     font=('Arial',14),
                                     width=80,
                                     height=20
                                     )
-            rec2_lable.grid(row=2, column=0, padx=20, pady=10, columnspan=3)
+            rec2_lable.grid(row=1, column=0, padx=20, pady=10)
             print_button.configure(state="disabled")
         
 
 
         #per visualizzare visite già prenotate
-        self.cursor.execute('SELECT n_booked FROM Patients WHERE user_id=?', (user_id,))
-        n_booked_tup= self.cursor.fetchone()
-        n_booked = int(n_booked_tup[0])
-        n_book=len(n_booked_tup)
-        self.cursor.execute('SELECT appointment_id, slot_tempo, doctor FROM Appointments WHERE patient=?', (user_id,))
-        visit_booked=self.cursor.fetchall()
+        # self.cursor.execute('SELECT n_booked FROM Patients WHERE user_id=?', (user_id,))
+        # n_booked_tup= self.cursor.fetchone()
+        # n_booked = int(n_booked_tup[0])
+        # n_book=len(n_booked_tup)
+        # self.cursor.execute('SELECT appointment_id, slot_tempo, doctor FROM Appointments WHERE patient=?', (user_id,))
+        # visit_booked=self.cursor.fetchall()
 
         # === Elenco visite prenotate ===
-        self.scrollable_frame3 = ctk.CTkScrollableFrame(self, label_text="Your booked appointment")
-        self.scrollable_frame3.grid(row=2, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)                                            #qua sostituire la composizione di lable a più informazioni
-        self.scrollable_frame3.grid_columnconfigure(0, weight=1)
-        for i in range(n_booked):
-            visit_x=visit_booked[i][0]
-            book_lable=ctk.CTkLabel(master=self.scrollable_frame3, 
-                                text=visit_x,
-                                font=('Arial',14),
-                                width=80,
-                                height=20
-                                )
-            book_lable.grid(row=i+1, column=0, padx=20, pady=10, columnspan=3)
+        # self.scrollable_frame3 = ctk.CTkScrollableFrame(self, label_text="Your booked appointment")
+        # self.scrollable_frame3.grid(row=2, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)                                            #qua sostituire la composizione di lable a più informazioni
+        # self.scrollable_frame3.grid_columnconfigure(0, weight=1)
+        # for i in range(n_booked):
+        #     visit_x=visit_booked[i][0]
+        #     book_lable=ctk.CTkLabel(master=self.scrollable_frame3, 
+        #                         text=visit_x,
+        #                         font=('Arial',14),
+        #                         width=80,
+        #                         height=20
+        #                         )
+        #     book_lable.grid(row=i+1, column=0, padx=20, pady=10, columnspan=3)
 
         # === Filtro eliminazione visita ===
-        self.scrollable_frame4 = ctk.CTkScrollableFrame(self, label_text="Filter for doctor and time slot", width=500)
-        self.scrollable_frame4.grid(row=1, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)
-        self.scrollable_frame4.grid_columnconfigure(0, weight=1)
+        # self.scrollable_frame4 = ctk.CTkScrollableFrame(self, label_text="Filter for doctor and time slot", width=500)
+        # self.scrollable_frame4.grid(row=1, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)
+        # self.scrollable_frame4.grid_columnconfigure(0, weight=1)
         #del_lable=ctk.CTkLabel(master=self.scrollable_frame4, 
         #                        text='Search for visit to forfeit', 
         #                        font=('Arial',14),
@@ -587,88 +644,91 @@ class AppointmentPage(ctk.CTkFrame):
         #                        height=30
         #                        )
         #del_lable.grid(row=1, column=0, padx=20, pady=10, columnspan=2)
-        data_del_lable=ctk.CTkLabel(master=self.scrollable_frame4, 
-                                text='Data of undesired visit', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        data_del_lable.grid(row=0, column=0, padx=20, pady=10)
-        doc_del_lable=ctk.CTkLabel(master=self.scrollable_frame4, 
-                                text='Doctor of undesired visit', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        doc_del_lable.grid(row=0, column=2, padx=20, pady=10)
+        # data_del_lable=ctk.CTkLabel(master=self.scrollable_frame4, 
+        #                         text='Data of undesired visit', 
+        #                         font=('Arial',11),
+        #                         width=300,
+        #                         height=30
+        #                         )
+        # data_del_lable.grid(row=0, column=0, padx=20, pady=10)
+        # doc_del_lable=ctk.CTkLabel(master=self.scrollable_frame4, 
+        #                         text='Doctor of undesired visit', 
+        #                         font=('Arial',11),
+        #                         width=300,
+        #                         height=30
+        #                         )
+        # doc_del_lable.grid(row=0, column=2, padx=20, pady=10)
 
-        self.cursor.execute('SELECT slot_tempo FROM Appointments WHERE patient=?', (user_id,))
-        hours=self.cursor.fetchall()
-        self.combobox_1 = ctk.CTkComboBox(master=self.scrollable_frame4,
-                                        values = [str(hour[0]) for hour in hours])
-        self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
-        self.combobox_1.set("")
-        self.cursor.execute('SELECT doctor FROM Appointments WHERE patient=?', (user_id,))
-        doct=self.cursor.fetchall()
-        self.combobox_2 = ctk.CTkComboBox(master=self.scrollable_frame4,
-                                        values = [str(doc_str[0]) for doc_str in doct])
-        self.combobox_2.grid(row=1, column=2, padx=20, pady=(10, 10))
-        self.combobox_2.set("")
+        # self.cursor.execute('SELECT slot_tempo FROM Appointments WHERE patient=?', (user_id,))
+        # hours=self.cursor.fetchall()
+        # self.combobox_1 = ctk.CTkComboBox(master=self.scrollable_frame4,
+        #                                 values = [str(hour[0]) for hour in hours])
+        # self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
+        # self.combobox_1.set("")
+        # self.cursor.execute('SELECT doctor FROM Appointments WHERE patient=?', (user_id,))
+        # doct=self.cursor.fetchall()
+        # self.combobox_2 = ctk.CTkComboBox(master=self.scrollable_frame4,
+        #                                 values = [str(doc_str[0]) for doc_str in doct])
+        # self.combobox_2.grid(row=1, column=2, padx=20, pady=(10, 10))
+        # self.combobox_2.set("")
 
         # === Elenco visite filtrate tra le possibili da eliminare ===
-        self.scrollable_frame2 = ctk.CTkScrollableFrame(self, label_text="Select visit to forfeit")
-        self.scrollable_frame2.grid(row=2, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)
-        self.scrollable_frame2.grid_columnconfigure(1, weight=1)
-        self.scrollable_frame_radiobut2 = []
-        self.radio_var2 = ctk.IntVar(value=0)
-        self.label_radio_group2 = ctk.CTkLabel(master=self.scrollable_frame2, text="Available visits")
-        if len(visit_booked)>0:
-            for i in range(n_book):
-                booked_round = f"Appointment Code: {visit_booked[i][0]}, Time: {visit_booked[i][1]}, Doctor: {visit_booked[i][2]}"
-                radio_button1 = ctk.CTkRadioButton(master=self.scrollable_frame2, variable=self.radio_var2, value=i, text=booked_round)
-                radio_button1.grid(row=i, column=0, padx=10, pady=(0, 20))
-                self.scrollable_frame_radiobut2.append(radio_button1)
-            visit_sel= self.get_selected_text2()
-            code= self.get_codice_appuntamento(visit_sel)
-        else:
-            self.label_radio_group2 = ctk.CTkLabel(master=self.scrollable_frame2, text="No visit booked")
-            self.label_radio_group2.grid(row=1, column=0, padx=10, pady=(0, 20), columnspan=3)
+        # self.scrollable_frame2 = ctk.CTkScrollableFrame(self, label_text="Select visit to forfeit")
+        # self.scrollable_frame2.grid(row=2, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)
+        # self.scrollable_frame2.grid_columnconfigure(1, weight=1)
+        # self.scrollable_frame_radiobut2 = []
+        # self.radio_var2 = ctk.IntVar(value=0)
+        # self.label_radio_group2 = ctk.CTkLabel(master=self.scrollable_frame2, text="Available visits")
+        # if len(visit_booked)>0:
+        #     for i in range(n_book):
+        #         booked_round = f"Appointment Code: {visit_booked[i][0]}, Time: {visit_booked[i][1]}, Doctor: {visit_booked[i][2]}"
+        #         radio_button1 = ctk.CTkRadioButton(master=self.scrollable_frame2, variable=self.radio_var2, value=i, text=booked_round)
+        #         radio_button1.grid(row=i, column=0, padx=10, pady=(0, 20))
+        #         self.scrollable_frame_radiobut2.append(radio_button1)
+        #     visit_sel= self.get_selected_text2()
+        #     code= self.get_codice_appuntamento(visit_sel)
+        # else:
+        #     self.label_radio_group2 = ctk.CTkLabel(master=self.scrollable_frame2, text="No visit booked")
+        #     self.label_radio_group2.grid(row=1, column=0, padx=10, pady=(0, 20), columnspan=3)
 
-        if len(visit_booked)>0:
-            eliminate_button = ctk.CTkButton(
-                master=self.scrollable_frame2,
-                text="Forfeit selected appointment",
-                height=30,
-                width=80,
-                font=ctk.CTkFont(size=12),
-                command=lambda: self.eliminate(code)
-            )
-            eliminate_button.grid(row=n_book+3, column=5, padx=35, pady=10, sticky="ew")
-            eliminate_button.configure(state="normal")
-        else:
-            eliminate_button = ctk.CTkButton(
-                master=self.scrollable_frame2,
-                text="Forfeit selected appointment",
-                height=30,
-                width=80,
-                font=ctk.CTkFont(size=12),
-                command=lambda: self.eliminate(code)
-            )
-            eliminate_button.grid(row=n_book+3, column=5, padx=35, pady=10, sticky="ew")
-            eliminate_button.configure(state="disabled")
+        # if len(visit_booked)>0:
+        #     eliminate_button = ctk.CTkButton(
+        #         master=self.scrollable_frame2,
+        #         text="Forfeit selected appointment",
+        #         height=30,
+        #         width=80,
+        #         font=ctk.CTkFont(size=12),
+        #         command=lambda: self.eliminate(code)
+        #     )
+        #     eliminate_button.grid(row=n_book+3, column=5, padx=35, pady=10, sticky="ew")
+        #     eliminate_button.configure(state="normal")
+        # else:
+        #     eliminate_button = ctk.CTkButton(
+        #         master=self.scrollable_frame2,
+        #         text="Forfeit selected appointment",
+        #         height=30,
+        #         width=80,
+        #         font=ctk.CTkFont(size=12),
+        #         command=lambda: self.eliminate(code)
+        #     )
+        #     eliminate_button.grid(row=n_book+3, column=5, padx=35, pady=10, sticky="ew")
+        #     eliminate_button.configure(state="disabled")
 
 
-        menu_bar = ctk.CTkFrame(self, fg_color="transparent")
-        menu_bar.grid(row=3, column=5, pady=20)
-        menu_button = ctk.CTkButton(
-            master=menu_bar,
-            text="☰ Menu",
-            width=100,
-            height=35,
-            font=ctk.CTkFont(size=14),
-            command=self.menu_callback
-        )
-        menu_button.grid(row=3, column=5, padx=10, pady=(0, 20))
+        # menu_bar = ctk.CTkFrame(self, fg_color="transparent")
+        # menu_bar.grid(row=3, column=5, pady=20)
+        # menu_button = ctk.CTkButton(
+        #     master=menu_bar,
+        #     text="☰ Menu",
+        #     width=100,
+        #     height=35,
+        #     font=ctk.CTkFont(size=14),
+        #     command=self.menu_callback
+        # )
+        # menu_button.grid(row=3, column=5, padx=10, pady=(0, 20))
+
+    #def save_selection(self, value):
+    #    self.selected_value = value
 
     def conferma(self, slot_sel, doc_sel, user, user_id):
         self.cursor.execute('SELECT appointment_id FROM Appointments WHERE slot_tempo=?  AND doctor=?', slot_sel, doc_sel)
@@ -694,12 +754,9 @@ class AppointmentPage(ctk.CTkFrame):
         selected_index = self.radio_var.get()
         if self.selected_index is not None:
             slot_sel = self.scrollable_frame_radiobut[selected_index].cget("text")
-            self.cursor.execute('SELECT DISTINCT doctor FROM Appointments WHERE dispo= 1 AND slot_tempo=?',slot_sel)
-            doc_avail_vect=self.cursor.fetchall()
-            doc_avail= len(doc_avail_vect)
-            return slot_sel, doc_avail
+            return slot_sel
         else:
-            return None, None
+            return None
     
     def get_selected_text1(self):
         if self.selected_index1 is not None:
