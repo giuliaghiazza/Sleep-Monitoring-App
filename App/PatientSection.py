@@ -530,7 +530,7 @@ class AppointmentPage(ctk.CTkFrame):
         self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
         #self.combobox_1.set("")
 
-        if selected_value is None:
+        if selected_value.get() in (None, "", "None"):
             self.cursor.execute('SELECT DISTINCT slot_tempo FROM Appointments WHERE dispo=1')
             n_availability_vect=self.cursor.fetchall()
             n_availability= len(n_availability_vect)
@@ -554,10 +554,11 @@ class AppointmentPage(ctk.CTkFrame):
         self.scrollable_frame_radiobut = []
         self.radio_var = ctk.IntVar(value=0)
         self.label_radio_group = ctk.CTkLabel(self.frame, text="Available slots")
+        self.label_radio_group.grid(row=2, column=0, padx=10, pady=(0, 20))
         for i in range(n_availability):
             slot_text=n_availability_vect[i][0]
             radio_button = ctk.CTkRadioButton(self.frame, variable=self.radio_var, value=i, text=slot_text)
-            radio_button.grid(row=i+2, column=0, padx=10, pady=(0, 20))
+            radio_button.grid(row=i+3, column=0, padx=10, pady=(0, 20))
             self.scrollable_frame_radiobut.append(radio_button)
         slot_sel= self.get_selected_text()
 
