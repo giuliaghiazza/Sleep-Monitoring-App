@@ -425,7 +425,7 @@ class Main(ctk.CTkFrame):
             pass
 
         title_label = ctk.CTkLabel(parent, text="Welcome technician!", font=ctk.CTkFont(size=22, weight="bold"))
-        title_label.grid(row=0, column=1, columnspan=3, pady=(20, 10), sticky="ew")
+        title_label.grid(row=0, column=1, columnspan=3, pady=(20, 10), sticky="w")
 
         # === Bottom Menu ===
         menu_bar = ctk.CTkFrame(parent, fg_color="transparent")
@@ -489,7 +489,7 @@ class Main(ctk.CTkFrame):
                       ).grid(row=1000, column=0, columnspan=2, pady=(30, 10))
 
         self.manage_btn = ctk.CTkButton(parent,
-                                        text="🛠 Manage Appointments",
+                                        text="🛠 Manage Sensors",
                                         width=180,
                                         corner_radius=10,
                                         fg_color="#57cc99",

@@ -291,7 +291,6 @@ c.execute("""
         date DATETIME NOT NULL, 
         created_at DATETIME,
         malfunction TEXT,
-        
         FOREIGN KEY (patient) REFERENCES Patients(user_id),
         FOREIGN KEY (sensor_id) REFERENCES Sensors(Code_device),
         FOREIGN KEY (session_id) REFERENCES Sessions(session_id)

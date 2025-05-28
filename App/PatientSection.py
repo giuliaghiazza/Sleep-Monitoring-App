@@ -139,6 +139,13 @@ class SettingsPage(ctk.CTkFrame):
             messagebox.showerror("Error", f"An error occurred: {e}")
 
 class Main(ctk.CTkFrame):
+    def toggle_manage_mode(self):
+        self.manage_mode = not self.manage_mode
+        self.manage_btn.configure(
+            text="✅ Exit Manage Mode" if self.manage_mode else "🛠 Manage Appointments"
+        )
+        self.show_appointments(self.user_id)
+
     def __init__(self, master, controller, user_id):
         super().__init__(master, fg_color="white")
         self.controller = controller
@@ -146,6 +153,7 @@ class Main(ctk.CTkFrame):
         self.setup_gui(user_id)
         self.conn = sqlite3.connect('App/Database/gui_database.db')
         self.cursor = self.conn.cursor()
+        self.manage_mode = False 
 
     def setup_gui(self, user_id): 
         self.appointments_container = self
@@ -202,7 +210,7 @@ class Main(ctk.CTkFrame):
 
         emergency_button = ctk.CTkButton(
             master=self,
-            text="🚨 Emergency Contact",
+            text="🚨 Contact Page",
             height=50,
             width=250,
             font=ctk.CTkFont(size=16, weight="bold"),
@@ -237,8 +245,8 @@ class Main(ctk.CTkFrame):
             text="↪ Logout",
             width=100,
             height=35,
-            fg_color="#57cc99",
-            hover_color="#38a3a5",
+            fg_color="#38a3a5",
+            hover_color="#57cc99",
             font=ctk.CTkFont(size=14),
             command= logout
         )
@@ -247,7 +255,7 @@ class Main(ctk.CTkFrame):
     def show_appointments(self, user_id):
         for widget in self.appointments_container.winfo_children():
             grid_info = widget.grid_info()
-            if 4 <= int(grid_info.get("row", 0)) < 100 and int(grid_info.get("column", 0)) == 1:
+            if 3 <= int(grid_info.get("row", 0)) < 100 and int(grid_info.get("column", 0)) == 1:
                 widget.destroy()
 
         today = "2025-05-29"
@@ -273,6 +281,7 @@ class Main(ctk.CTkFrame):
             return
 
         row = 3
+
         for appointment in appointments:
             time_str = appointment[0].split(' ')[1][:5]
             visit_type = appointment[1]
@@ -282,10 +291,16 @@ class Main(ctk.CTkFrame):
             doctor_name = f"{appointment[3]} {appointment[4]}"
             appointment_id = appointment[2]
 
+            if self.manage_mode:
+                apt_text = f"{time_str} 🕒 | {doctor_name}"
+            else:
+                apt_text = f"{time_str} 🕒 | {doctor_name} | {visit_name_str}"
+
+
             apt_button = ctk.CTkButton(
                 self.appointments_container,
-                text=f"{time_str} 🕒 | {doctor_name} | {visit_name_str}",
-                width=320,
+                text=apt_text,
+                width=200,
                 height=40,
                 font=ctk.CTkFont(size=14),
                 corner_radius=10,
@@ -295,6 +310,19 @@ class Main(ctk.CTkFrame):
                 command=lambda vt=appointment_id: self.controller.show_internal_page("visit_details", vt)
             )
             apt_button.grid(row=row, column=1, columnspan=3, pady=5)
+
+            if self.manage_mode:
+                delete_btn = ctk.CTkButton(
+                    self.appointments_container,
+                    text="❌",
+                    width=20,
+                    height=20,
+                    fg_color="#ff4d4d",
+                    hover_color="#cc0000",
+                    font=ctk.CTkFont(size=12),
+                    command=lambda aid=appointment_id: self.delete_appointment(aid)
+                )
+                delete_btn.grid(row=row, column=1, padx=5, pady=5, sticky = "e")
             row += 1
         
         if appointments:
@@ -309,6 +337,31 @@ class Main(ctk.CTkFrame):
                 command=lambda: self.controller.show_internal_page("visitquest")
             )
             book_button.grid(row = row, column=1, padx=35, pady=0, sticky="ew")
+            row += 1
+
+        if appointments:
+            self.manage_btn = ctk.CTkButton(
+                master=self,
+                text="🛠 Manage Appointments",
+                height=30,
+                width=70,
+                fg_color="#57cc99",
+                hover_color="#38a3a5",
+                font=ctk.CTkFont(size=12),
+                command=lambda: self.toggle_manage_mode()
+            )
+            self.manage_btn.grid(row = row, column=1, padx=35, pady=0)
+
+    def delete_appointment(self, appointment_id):
+        try:
+            self.cursor.execute("DELETE FROM Appointments WHERE appointment_id = ?", (appointment_id,))
+            self.conn.commit()
+            messagebox.showinfo("Deleted", "Appointment deleted successfully.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to delete appointment: {e}")
+
+        # Refresh the appointments list
+        self.show_appointments(self.user_id)
 
 class VisitQuestionnaire(ctk.CTkFrame):
     def __init__(self, master, controller, user_id):
@@ -1202,20 +1255,33 @@ class HealthDataPage(ctk.CTkFrame):
 
 class EmergencyPage(ctk.CTkFrame):
     def __init__(self, master,controller, user_id):
-        super().__init__(master)
+        super().__init__(master, fg_color="white")
         self.user_id = user_id
         self.controller = controller
         self.setup_gui(user_id)
 
     def setup_gui(self, user_id): 
         self.user_id = user_id
-        scrollable_frame_tot = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
+        scrollable_frame_tot = ctk.CTkScrollableFrame(self, width=750, height=550, fg_color="white")
         scrollable_frame_tot.grid(pady=20, padx=10)       #, fill="both", expand=True
         scrollable_frame_tot.grid_columnconfigure((0, 1, 2), weight=1)
 
+        # === Back Button in Top-Left ===
+        back_button = ctk.CTkButton(
+            master=scrollable_frame_tot,
+            text="← Back",
+            width=60,
+            height=30,
+            font=ctk.CTkFont(size=14),
+            fg_color="#57c2a8",
+            hover_color="#034172",
+            command=lambda: self.controller.show_internal_page("main")
+        )
+        back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
+
         # === Header Title ===
         title_label = ctk.CTkLabel(scrollable_frame_tot, text="🚨 Patient-clinic contacts", font=ctk.CTkFont(size=18))
-        title_label.grid(row=0, column=0, pady=(20, 10), columnspan=3)
+        title_label.grid(row=0, column=0, pady=(20, 10), columnspan=2)
         self.conn = sqlite3.connect('App/Database/gui_database.db')
         self.cursor = self.conn.cursor()
 
@@ -1223,331 +1289,132 @@ class EmergencyPage(ctk.CTkFrame):
         self.frame.grid(row=1, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.frame.grid_columnconfigure(0, weight=1)
 
-        frame_lable=ctk.CTkLabel(master=self.frame, 
-                                text='Questionnaire di che tipo boh:', 
-                                font=('Arial',16),
-                                width=300,
-                                height=30
-                                )
-        frame_lable.grid(row=0, column=0, padx=20, pady=1, sticky="sw")
+        # Main container
+        main_frame = ctk.CTkFrame(scrollable_frame_tot, fg_color="transparent")
+        main_frame.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
+        main_frame.grid_columnconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=1)
 
-        self.tabview = ctk.CTkTabview(self.frame, width=250, height=300, fg_color="white")
-        self.tabview.grid(row=1, column=0, padx=(20, 0), pady=(0, 0), sticky="nsew")
-        self.tabview.add("Anagraphic data")
-        self.tabview.add("Night related data")
-        self.tabview.add("Confirm")
-        self.tabview.tab("Anagraphic data").grid_columnconfigure(0, weight=1)
-        self.tabview.tab("Night related data").grid_columnconfigure(0, weight=1)
-        self.tabview.tab("Confirm").grid_columnconfigure(0, weight=1)
+        # ================== LEFT COLUMN: SENSOR REPORT ==================
+        left_frame = ctk.CTkFrame(master=main_frame, fg_color="white")
+        left_frame.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
+        left_frame.grid_columnconfigure(0, weight=1)
 
-        self.scrollable_frame = ctk.CTkFrame(self.tabview.tab("Anagraphic data"), fg_color="white")   #, label_text="Check your anagraphic data"
-        self.scrollable_frame.grid(row=0, column=0, padx=(20, 0), pady=(1, 0), sticky="nsew")
-        self.scrollable_frame.grid_columnconfigure(0, weight=1)
-
-        self.cursor.execute('SELECT Name FROM Patients WHERE user_id=?', (user_id,))         #anche qua va capito come passarlo poi in implementazione reale
-        nam=self.cursor.fetchone()
-        an_var = ctk.StringVar(value=nam)
-        an_lable=ctk.CTkLabel(master=self.scrollable_frame, 
-                                text='Name:', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        an_lable.grid(row=0, column=0, padx=20, pady=1, sticky="sw")
-        an_entry=ctk.CTkEntry(master=self.scrollable_frame,
-                                textvariable=an_var,
-                                width=200,
-                                height=30,
-                                font=('Arial',14)
-                                )
-        an_entry.grid(row=1, column=0, pady=(1, 5))
-
-        self.cursor.execute('SELECT Surname FROM Patients WHERE user_id=?', (user_id,))
-        nam1=self.cursor.fetchone()
-        an1_var = ctk.StringVar(value=nam1)
-        an1_lable=ctk.CTkLabel(master=self.scrollable_frame, 
-                                text='Surname:', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        an1_lable.grid(row=2, column=0, padx=20, pady=1, sticky="sw")
-        an1_entry=ctk.CTkEntry(master=self.scrollable_frame,
-                                textvariable=an1_var,
-                                width=200,
-                                height=30,
-                                font=('Arial',14)
-                                )
-        an1_entry.grid(row=3, column=0, pady=(1, 5))
-
-        self.cursor.execute('SELECT Codice_Fiscale FROM Patients WHERE user_id=?', (user_id,))
-        nam2=self.cursor.fetchone()
-        an2_var = ctk.StringVar(value=nam2)
-        an2_lable=ctk.CTkLabel(master=self.scrollable_frame, 
-                                text='Codice Fiscale:', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        an2_lable.grid(row=4, column=0, padx=20, pady=1, sticky="sw")
-        an2_entry=ctk.CTkEntry(master=self.scrollable_frame,
-                                textvariable=an2_var,
-                                width=200,
-                                height=30,
-                                font=('Arial',14)
-                                )
-        an2_entry.grid(row=5, column=0, pady=(1, 5))
-
-        self.cursor.execute('SELECT City_of_Recidency FROM Patients WHERE user_id=?', (user_id,))
-        nam3=self.cursor.fetchone()
-        an3_var = ctk.StringVar(value=nam3)
-        an3_lable=ctk.CTkLabel(master=self.scrollable_frame, 
-                                text='Città di residenza:', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        an3_lable.grid(row=6, column=0, padx=20, pady=1, sticky="sw")
-        an3_entry=ctk.CTkEntry(master=self.scrollable_frame,
-                                textvariable=an3_var,
-                                width=200,
-                                height=30,
-                                font=('Arial',14)
-                                )
-        an3_entry.grid(row=7, column=0, pady=(1, 5))
-
-        self.cursor.execute('SELECT Province_of_Recidency FROM Patients WHERE user_id=?', (user_id,))
-        nam4=self.cursor.fetchone()
-        an4_var = ctk.StringVar(value=nam4)
-        an4_lable=ctk.CTkLabel(master=self.scrollable_frame, 
-                                text='Provincia di residenza:', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        an4_lable.grid(row=8, column=0, padx=20, pady=1, sticky="sw")
-        an4_entry=ctk.CTkEntry(master=self.scrollable_frame,
-                                textvariable=an4_var,
-                                width=200,
-                                height=30,
-                                font=('Arial',14)
-                                )
-        an4_entry.grid(row=9, column=0, pady=(1, 20))
-
-        self.scrollable_frame1 = ctk.CTkFrame(self.tabview.tab("Night related data"), fg_color="white")  #, label_text="Insert night related data"
-        self.scrollable_frame1.grid(row=2, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew")
-        self.scrollable_frame1.grid_columnconfigure(0, weight=1)
-        nig_lable=ctk.CTkLabel(master=self.scrollable_frame1, 
-                                text='cosa ci metto dentro?:', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        nig_lable.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
-
-        self.not_so_scrollable_frame1 = ctk.CTkFrame(self.tabview.tab("Confirm"), fg_color="white")
-        self.not_so_scrollable_frame1.grid(row=2, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew")
-        self.not_so_scrollable_frame1.grid_columnconfigure(0, weight=1)
-        nig_lable=ctk.CTkLabel(master=self.scrollable_frame1, 
-                                text='cosa ci metto dentro?:', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        nig_lable.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
-
-        con_lable=ctk.CTkLabel(master=self.not_so_scrollable_frame1, 
-                                text='Describe any problems encountered during nigth', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        con_lable.grid(row=0, column=0, padx=20, pady=1, sticky="nsew")
-
-        prob_entry=ctk.CTkTextbox(master=self.not_so_scrollable_frame1,
-                                width=200,
-                                height=80,
-                                font=('Arial',14)
-                                )
-        prob_entry.grid(row=1, column=0, pady=(1, 10),columnspan=2)
-
-        con_button = ctk.CTkButton(
-            master=self.not_so_scrollable_frame1,
-            text="Send module",
-            height=50,
-            width=120,
-            font=ctk.CTkFont(size=16),
-            command=self.send_module  
+        # Title
+        left_title = ctk.CTkLabel(
+            master=left_frame,
+            text="Report an issue with the sensor",
+            font=("Arial", 16, "bold"),
+            anchor="w"
         )
-        con_button.grid(row=2, column=0, padx=35, pady=10, sticky="nsew")
+        left_title.grid(row=0, column=0, padx=20, pady=(10, 10), sticky="w")
 
-        #per oscurare tabella
-        self.overlay = ctk.CTkFrame(self, width=250, height=300, fg_color="grey")
-        self.overlay.place_forget()  # Nascondi inizialmente
-        self.overlay.grid_propagate(False)
+        # Fetch sensor names for dropdown
+        self.cursor.execute('SELECT Name FROM Sensors WHERE patient=?', (user_id,))
+        sensor_names = [row[0] for row in self.cursor.fetchall()]
+        default_sensor = sensor_names[0] if sensor_names else "No sensors"
 
-        #self.scrollable_frame2 = ctk.CTkScrollableFrame(self, label_text="", width=400)
-        #self.scrollable_frame2.grid(row=1, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew")
-        #self.scrollable_frame2.grid_columnconfigure(0, weight=1)
-        self.day_lable=ctk.CTkLabel(master=self, 
-                                text='', 
-                                font=('Arial',24),
-                                width=500,
-                                height=200
-                                )
-        self.day_lable.grid(row=2, column=0, padx=20, pady=10, sticky="nsew")
+        # Sensor label
+        sensor_label = ctk.CTkLabel(master=left_frame, text="Sensor:", font=("Arial", 11))
+        sensor_label.grid(row=1, column=0, padx=20, pady=5, sticky="w")
 
-        # menu_bar = ctk.CTkFrame(self, fg_color="transparent")
-        # menu_bar.grid(row=2, column=3, pady=20)
-        # menu_button = ctk.CTkButton(
-        #    master=menu_bar,
-        #    text="☰ Menu",
-        #    width=100,
-        #    height=35,
-        #    font=ctk.CTkFont(size=14),
-        #    command=self.menu_callback
-        # )
-        # menu_button.grid(row=2, column=0, padx=10, pady=(0, 20))
-
-        self.scrollable_frame2 = ctk.CTkFrame(scrollable_frame_tot, fg_color="white")   # label_text="Emergency contacts",
-        self.scrollable_frame2.grid(row=3, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)
-        self.scrollable_frame2.grid_columnconfigure(0, weight=1)
-        frame1_lable=ctk.CTkLabel(master=self.scrollable_frame2, 
-                                text='Doctors emergency contacts:', 
-                                font=('Arial',16),
-                                width=300,
-                                height=30
-                                )
-        frame1_lable.grid(row=0, column=0, padx=20, pady=1, sticky="sw")
-
-        doc_phone_lable=ctk.CTkLabel(master=self.scrollable_frame2, 
-                                text='Choose doctor to contat', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        doc_phone_lable.grid(row=1, column=0, padx=20, pady=1, sticky="sw")
-
-        self.cursor.execute('SELECT name FROM Patients WHERE user_id=?', (user_id,))
-        utent=self.cursor.fetchone()
-        self.cursor.execute('SELECT DISTINCT doctor FROM Prescription WHERE patient=?', utent)
-        doc_to_call=self.cursor.fetchall()
-
-        self.combobox_1 = ctk.CTkComboBox(master=self.scrollable_frame2,
-                                        values = [str(hour[0]) for hour in doc_to_call])
-        self.combobox_1.grid(row=2, column=0, padx=20, pady=(1, 10))
-        self.combobox_1.set("")
-        doc_phone_button = ctk.CTkButton(
-            master=self.scrollable_frame2,
-            text="Call",
+        # Sensor dropdown
+        self.an2_var = ctk.StringVar(value=default_sensor)
+        sensor_menu = ctk.CTkOptionMenu(
+            master=left_frame,
+            variable=self.an2_var,
+            values=sensor_names,
+            width=200,
             height=30,
-            width=120,
-            font=ctk.CTkFont(size=16),
-            #command=self.send_module  
+            font=("Arial", 14)
         )
-        doc_phone_button.grid(row=3, column=0, padx=35, pady=10, sticky="nsew")
-        doc_mail_button = ctk.CTkButton(
-            master=self.scrollable_frame2,
-            text="Write",
-            height=30,
-            width=120,
-            font=ctk.CTkFont(size=16),
-            #command=self.send_module  
+        sensor_menu.grid(row=2, column=0, padx=20, pady=(0, 10), sticky="w")
+
+        # Malfunction date
+        date_label = ctk.CTkLabel(master=left_frame, text="Date of the malfunction (YYYY-MM-DD HH:MM):")
+        date_label.grid(row=3, column=0, padx=20, pady=5, sticky="w")
+
+        self.entry_date = ctk.CTkEntry(master=left_frame)
+        self.entry_date.grid(row=4, column=0, padx=20, pady=5, sticky="w")
+
+        # Problem description
+        desc_label = ctk.CTkLabel(
+            master=left_frame,
+            text='Describe any problems encountered during the night:',
+            font=('Arial', 11),
         )
-        doc_mail_button.grid(row=4, column=0, padx=35, pady=10, sticky="nsew")
+        desc_label.grid(row=5, column=0, padx=20, pady=(10, 0), sticky="w")
 
-        bottom_lable=ctk.CTkLabel(master=self.scrollable_frame2, 
-                                text='', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        bottom_lable.grid(row=5, column=0, padx=20, pady=10, sticky="sw")
-        bottom_lable1=ctk.CTkLabel(master=self.scrollable_frame2, 
-                                text='', 
-                                font=('Arial',11),
-                                width=300,
-                                height=30
-                                )
-        bottom_lable1.grid(row=6, column=0, padx=20, pady=10, sticky="sw")
+        self.prob_entry = ctk.CTkTextbox(master=left_frame, width=400, height=80, font=('Arial', 14))
+        self.prob_entry.grid(row=6, column=0, padx=20, pady=(0, 10), sticky="ew")
 
-        # tec_phone_lable=ctk.CTkLabel(master=self.scrollable_frame2, 
-        #                         text='Choose technician to contact', 
-        #                         font=('Arial',11),
-        #                         width=300,
-        #                         height=30
-        #                         )
-        # tec_phone_lable.grid(row=0, column=2, padx=20, pady=10, sticky="sw")
+        # Submit button
+        submit_button = ctk.CTkButton(
+            master=left_frame,
+            text="Send report",
+            height=40,
+            width=150,
+            font=ctk.CTkFont(size=14),
+            command= lambda: self.send_module(user_id)
+        )
+        submit_button.grid(row=7, column=0, padx=20, pady=(10, 20), sticky="w")
 
-        # self.cursor.execute('SELECT Name FROM Technicians')
-        # tec_to_call=self.cursor.fetchall()
+        # ================== RIGHT COLUMN: DOCTOR CONTACT ==================
+        right_frame = ctk.CTkFrame(master=main_frame, fg_color="white")
+        right_frame.grid(row=0, column=1, padx=(0, 0), sticky="nsew")
+        right_frame.grid_columnconfigure(0, weight=1)
 
-        # self.combobox_2 = ctk.CTkComboBox(master=self.scrollable_frame2,
-        #                                 values = [str(hour[0]) for hour in tec_to_call])
-        # self.combobox_2.grid(row=1, column=2, padx=20, pady=(10, 10))
-        # self.combobox_2.set("")
-        # tec_phone_button = ctk.CTkButton(
-        #     master=self.scrollable_frame2,
-        #     text="Call",
-        #     height=50,
-        #     width=120,
-        #     font=ctk.CTkFont(size=16),
-        #     #command=self.send_module  
-        # )
-        # tec_phone_button.grid(row=2, column=2, padx=35, pady=10, sticky="nsew")
-
-        # self.scrollable_frame3 = ctk.CTkScrollableFrame(scrollable_frame_tot, label_text="E-mail contacts", fg_color="white")
-        # self.scrollable_frame3.grid(row=5, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew", columnspan=3)
-        # self.scrollable_frame3.grid_columnconfigure(0, weight=1)
-        # doc_mail_lable=ctk.CTkLabel(master=self.scrollable_frame3, 
-        #                         text='Choose doctor to contat', 
-        #                         font=('Arial',11),
-        #                         width=300,
-        #                         height=30
-        #                         )
-        # doc_mail_lable.grid(row=0, column=0, padx=20, pady=10, sticky="sw")
-
-        # self.combobox_1 = ctk.CTkComboBox(master=self.scrollable_frame3,
-        #                                 values = [str(hour[0]) for hour in doc_to_call])
-        # self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
-        # self.combobox_1.set("")
-        # doc_mail_button = ctk.CTkButton(
-        #     master=self.scrollable_frame3,
-        #     text="Write",
-        #     height=50,
-        #     width=120,
-        #     font=ctk.CTkFont(size=16),
-        #     #command=self.send_module  
-        # )
-        # doc_mail_button.grid(row=2, column=0, padx=35, pady=10, sticky="nsew")
-
-        # tec_mail_lable=ctk.CTkLabel(master=self.scrollable_frame3, 
-        #                         text='Choose technician to contat', 
-        #                         font=('Arial',11),
-        #                         width=300,
-        #                         height=30
-        #                         )
-        # tec_mail_lable.grid(row=0, column=2, padx=20, pady=10, sticky="sw")
-
-        # self.combobox_2 = ctk.CTkComboBox(master=self.scrollable_frame3,
-        #                                 values = [str(hour[0]) for hour in tec_to_call])
-        # self.combobox_2.grid(row=1, column=2, padx=20, pady=(10, 10))
-        # self.combobox_2.set("")
-        # tec_mail_button = ctk.CTkButton(
-        #     master=self.scrollable_frame3,
-        #     text="Write",
-        #     height=50,
-        #     width=120,
-        #     font=ctk.CTkFont(size=16),
-        #     #command=self.send_module  
-        # )
-        # tec_mail_button.grid(row=2, column=2, padx=35, pady=10, sticky="nsew")
+        # Title
+        right_title = ctk.CTkLabel(
+            master=right_frame,
+            text="Doctor Contact",
+            font=("Arial", 16, "bold"),
+            anchor="w"
+        )
+        right_title.grid(row=0, column=0, padx=20, pady=(10, 10), sticky="w")
 
 
-    def send_module(self):
-        """Oscura la TabView."""
-        self.overlay.grid(row=1, column=0, padx=(20, 0), pady=(20, 0), sticky="nsew")   #da migliorare solo se vogliamo farla semitrasparente al posto di gray poche righe sopra
-        self.day_lable.configure(text="Today questionnaire alredy submitted \n come back domorrow")
+        # Doctor info (dummy data – get this from database in real application)
+        doc_info = ctk.CTkLabel(
+            master=right_frame,
+            text="Dr. Gianna Rossi \nEmail: dr.rossi@quiet.com\nPhone: +123 456 7890",
+            font=("Arial", 13),
+            justify="left"
+        )
+        doc_info.grid(row=1, column=0, padx=20, pady=10, sticky="w")
+
+    from datetime import datetime
+
+    def send_module(self, user_id):
+        selected_sensor_name = self.an2_var.get()
+        malfunction_date = self.entry_date.get()
+        problem_description = self.prob_entry.get("1.0", "end").strip()
+        created_at = datetime.datetime.now()
+        patient_id = user_id 
+        try:
+            # Get Code_device using the selected sensor name
+            self.cursor.execute("SELECT Code_device FROM Sensors WHERE Name=? AND patient=?", (selected_sensor_name, patient_id))
+            result = self.cursor.fetchone()
+
+            if result is None:
+                self.day_lable.configure(text="Error: Selected sensor not found in database.")
+                return
+
+            sensor_id = result[0]
+
+            # Insert into database
+            self.cursor.execute("""
+                INSERT INTO SensorQuestionnaire (patient, sensor_id, date, created_at, malfunction)
+                VALUES (?, ?, ?, ?, ?)
+            """, (patient_id, sensor_id, malfunction_date, created_at, problem_description))
+            self.conn.commit()
+
+            # Show success message
+            messagebox.showinfo("Submission Successful", "Submitted successfully!\nWe will contact you as soon as possible.\nThank you for your patience.")
+
+        except sqlite3.Error as e:
+            print("Database insert failed:", e)
+            messagebox.showerror("Submission Failed", "There was an error submitting the form. Please try again.")
 
     def menu_callback(self):
         SIDEBAR_WIDTH=250

@@ -684,6 +684,18 @@ class PatientPage(ctk.CTkFrame):
         ).grid(row=row, column=0, columnspan=2, padx=10, pady=10, sticky="w")
 
         row += 1
+
+        # Doctor info (dummy data – customize this)        
+        if patient_id == 8:
+            pat_info = ctk.CTkLabel(
+                parent,
+                text="Email: mariorossi@gmail.com\nPhone: +98 7654 3210",
+                font=("Arial", 13),
+                justify="left"
+            )
+            pat_info.grid(row=row, column=0, padx=20, pady=10, sticky="w")
+            row += 1
+
         # Diagnosis
         diag_text = diagnosis if diagnosis else "No diagnosis available."
         ctk.CTkLabel(
@@ -1033,7 +1045,7 @@ class Main(ctk.CTkFrame):
                     text_color="white",
                     command=lambda aid=appointment_id: self.delete_appointment(aid)
                 )
-                del_button.grid(row=row, column=2, sticky="e", padx=(0, 5))
+                del_button.grid(row=row, column=2, sticky="w", padx=(0, 5))
             else:
                 apt_button = ctk.CTkButton(
                     self.appointments_container,

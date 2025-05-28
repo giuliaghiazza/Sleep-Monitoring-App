@@ -263,7 +263,7 @@ class SigninPage(ctk.CTkFrame):
         # === Buttons ===
         signin_button = ctk.CTkButton(
             master=parent,
-            text="Sign-in",     #da aggiungere icona se vogliamo metterne una
+            text="Sign-in",    
             height=50,
             width=40,
             font=ctk.CTkFont(size=16),
