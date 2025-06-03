@@ -47,7 +47,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS Patients(
           Name VARCHAR(30),
           Surname VARCHAR(30) NOT NULL,
           Codice_Fiscale CHAR(16),
-          DoB DATE,
+          DoB text,
           Gender varchar,
           Age INTEGER CHECK(Age>=0),
           City_of_Birth VARCHAR(20),
@@ -285,10 +285,10 @@ c.execute("""CREATE TABLE IF NOT EXISTS SensorsPerformanceReport(
 c.execute("""
     CREATE TABLE IF NOT EXISTS SensorQuestionnaire (
         squest_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        patient INTEGER NOT NULL,
-        sensor_id INTEGER NOT NULL, 
-        session_id INTEGER NOT NULL,
-        date DATETIME NOT NULL, 
+        patient INTEGER,
+        sensor_id INTEGER, 
+        session_id INTEGER,
+        date DATETIME, 
         created_at DATETIME,
         malfunction TEXT,
         FOREIGN KEY (patient) REFERENCES Patients(user_id),

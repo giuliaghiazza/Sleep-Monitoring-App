@@ -44,23 +44,23 @@ for username, psw, name, surname, codice_fiscale in doctors:
 
 # List of patients: (username, password, Name, Surname)
 patients = [
-    ('Pippo', 'Franco', 'Pippo', 'Rossi', 37, "Male", 1, None),
-    ('LucaM', 'pass123', 'Luca', 'Marini', 23, "Male", None, None),
-    ('AnnaS', 'anna2025', 'Anna', 'Santoro', 57, "Female", None, None),
-    ('MarioR', 'mario456', 'Mario', 'Rossi', 43, "Male", 1, "Periodic Limb Movements Disorder"),
-    ('ElisaT', 'elisa789', 'Elisa', 'Tarantino', 19, "Female", None, None),
+    ('Pippo', 'Franco', 'Pippo', 'Rossi', 37, "Male", 1, None, "1988-05-15"),
+    ('LucaM', 'pass123', 'Luca', 'Marini', 23, "Male", None, None, None),
+    ('AnnaS', 'anna2025', 'Anna', 'Santoro', 57, "Female", None, None, None),
+    ('MarioR', 'mario456', 'Mario', 'Rossi', 43, "Male", 1, "Periodic Limb Movements Disorder", None),
+    ('ElisaT', 'elisa789', 'Elisa', 'Tarantino', 19, "Female", None, None, None),
 ]
 
-for username, psw, name, surname, age, gender, doctor, diagnosis in patients:
+for username, psw, name, surname, age, gender, doctor, diagnosis, dob in patients:
     c.execute("""
         INSERT INTO users (username, psw, role)
         VALUES (?, ?, ?)
     """, (username, psw, 'P'))
     user_id = c.lastrowid
     c.execute("""
-        INSERT INTO patients (Name, Surname, user_id, Age, Gender, assigned_doctor, diagnosis)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (name, surname, user_id, age, gender, doctor, diagnosis))
+        INSERT INTO patients (Name, Surname, user_id, Age, Gender, assigned_doctor, diagnosis, DoB)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (name, surname, user_id, age, gender, doctor, diagnosis, dob))
 
 connection.commit()
 connection.close()

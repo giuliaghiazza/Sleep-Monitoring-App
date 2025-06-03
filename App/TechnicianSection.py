@@ -16,6 +16,83 @@ def logout():
     subprocess.Popen([python, app_path])  # Launch App.py as new process
     sys.exit()  # Exit current GUI app
 
+import customtkinter as ctk
+import sqlite3
+from tkinter import messagebox
+
+# class SeeReport(ctk.CTkFrame):
+#     def __init__(self, master, sensor_id, user_id):
+#         super().__init__(master, fg_color="white")
+#         self.sensor_id = sensor_id
+#         self.user_id = user_id
+#         self.master = master
+
+#         self.grid(row=0, column=0, sticky="nsew")
+#         self.grid_configure(padx=20, pady=20)
+#         self.columnconfigure(0, weight=1)
+#         self.rowconfigure(2, weight=1)
+
+#         # Back Button
+#         back_button = ctk.CTkButton(
+#             master=self,
+#             text="← Back",
+#             width=60,
+#             height=30,
+#             font=ctk.CTkFont(size=14),
+#             fg_color="#57c2a8",
+#             hover_color="#034172",
+#             command=lambda: self.show_manage_sensor_page(sensor_id=self.sensor_id, user_id=self.user_id)
+#         )
+#         back_button.grid(row=0, column=0, sticky="w", padx=(0, 0), pady=(10, 10))
+
+#         # Title
+#         self.title_label = ctk.CTkLabel(self, text=f"Sensor Report for ID {sensor_id}", font=("Arial", 20))
+#         self.title_label.grid(row=1, column=0, pady=(0, 10), sticky="n")
+
+#         # Scrollable frame
+#         self.scroll_frame = ctk.CTkScrollableFrame(self, label_text="Reports")
+#         self.scroll_frame.grid(row=2, column=0, sticky="nsew", pady=(10, 10))
+
+#         # Load data
+#         self.load_data()
+
+#     def load_data(self):
+#         try:
+#             conn = sqlite3.connect("your_database.db")  # Replace with your actual database
+#             c = conn.cursor()
+
+#             c.execute("""
+#                 SELECT squest_id, patient, sensor_id, date, created_at, malfunction 
+#                 FROM SensorQuestionnaire 
+#                 WHERE sensor_id = ?
+#                 ORDER BY created_at DESC
+#             """, (self.sensor_id,))
+#             rows = c.fetchall()
+
+#             if not rows:
+#                 no_data_label = ctk.CTkLabel(self.scroll_frame, text="No reports found for this sensor.", font=("Arial", 14))
+#                 no_data_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+#                 return
+
+#             for i, row in enumerate(rows):
+#                 report_text = (
+#                     f"Report ID: {row[0]}\n"
+#                     f"Patient ID: {row[1]}\n"
+#                     f"Sensor ID: {row[2]}\n"
+#                     f"Date: {row[3]}\n"
+#                     f"Created At: {row[4]}\n"
+#                     f"Malfunction: {row[5]}\n"
+#                 )
+#                 report_box = ctk.CTkTextbox(self.scroll_frame, height=120, width=600)
+#                 report_box.insert("0.0", report_text)
+#                 report_box.configure(state="disabled")
+#                 report_box.grid(row=i, column=0, padx=10, pady=10, sticky="ew")
+
+#             conn.close()
+
+#         except sqlite3.Error as e:
+#             messagebox.showerror("Database Error", str(e))
+
 class ManageSensors(ctk.CTkFrame): 
     def __init__(self, master, controller, user_id, sensor_id, main_page):
         super().__init__(master, fg_color="white")
@@ -103,10 +180,12 @@ class ManageSensors(ctk.CTkFrame):
                     text="➕ See report",
                     fg_color="#38a3a5",
                     hover_color="#57cc99",
-                    #command=self.see_report
+                    command= lambda: self.controller.see_report(self.sensor_id, self.user_id)
             )
             self.see_report_btn.grid(row=2, column=0, pady=(10,500))
     
+   
+
     def submit(self):
         availability = self.fields["availability"].get().strip().upper() or self.sensor_data["availability"]
         status = self.fields["Status"].get().strip() or self.sensor_data["Status"]
@@ -311,7 +390,7 @@ class Main(ctk.CTkFrame):
     def toggle_manage_mode(self, parent):
         self.manage_mode = not self.manage_mode
         self.manage_btn.configure(
-            text="✅ Exit Manage Mode" if self.manage_mode else "🛠 Manage Appointments"
+            text="✅ Exit Manage Mode" if self.manage_mode else "🛠 Manage Sensors"
         )
         self.display_sensors(parent)
 
@@ -531,3 +610,9 @@ class Home_tecPage(ctk.CTkFrame):
         self.pages["manage"] = manage_page
         manage_page.grid(row=0, column=0, sticky="nsew")
         manage_page.tkraise()
+
+    def see_report(self, sensor_id, user_id):
+        see_report = SeeReport(self, sensor_id, user_id)
+        self.pages["see_report"] = see_report
+        see_report.grid(row=0, column=0, sticky="nsew")
+        see_report.tkraise()

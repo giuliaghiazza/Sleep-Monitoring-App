@@ -165,7 +165,7 @@ class SigninPage(ctk.CTkFrame):
             parent, text="Sign In",
             font=ctk.CTkFont(size=22, weight="bold")
         )
-        title_label.grid(row=0, column=1, pady=(20, 10), sticky="w")
+        title_label.grid(row=0, column=1, pady=(20, 10))
 
         # === Labels ===
         User_lable=ctk.CTkLabel(parent, 
@@ -174,7 +174,7 @@ class SigninPage(ctk.CTkFrame):
                                 width=300,
                                 height=30
                                 )
-        User_lable.grid(row=1, column=0, pady=(20, 10))
+        User_lable.grid(row=1, column=1, pady=(20, 10))
         
         # === Fill in fields ===
         self.user_entry=ctk.CTkEntry(parent,
@@ -183,7 +183,7 @@ class SigninPage(ctk.CTkFrame):
                                 height=30,
                                 font=('Arial',14)
                                 )
-        self.user_entry.grid(row=2, column=0, pady=(20, 10))
+        self.user_entry.grid(row=2, column=1, pady=(20, 10))
 
         self.pass_entry=ctk.CTkEntry(parent,
                                 placeholder_text='Password',
@@ -192,7 +192,7 @@ class SigninPage(ctk.CTkFrame):
                                 font=('Arial',14),
                                 show='*'
                                 )
-        self.pass_entry.grid(row=3, column=0, pady=(20, 10))
+        self.pass_entry.grid(row=3, column=1, pady=(20, 10))
 
         # === Labels ===
         Anag_lable=ctk.CTkLabel(parent, 
@@ -201,7 +201,7 @@ class SigninPage(ctk.CTkFrame):
                                 width=300,
                                 height=30
                                 )
-        Anag_lable.grid(row=4, column=0, padx=20, pady=10)
+        Anag_lable.grid(row=4, column=1, padx=20, pady=10)
         
         # === Fill in fields ===
         self.name_entry=ctk.CTkEntry(parent,
@@ -210,7 +210,7 @@ class SigninPage(ctk.CTkFrame):
                                 height=30,
                                 font=('Arial',14)
                                 )
-        self.name_entry.grid(row=5, column=0, pady=(20, 10))
+        self.name_entry.grid(row=5, column=1, pady=(20, 10))
 
         self.surname_entry=ctk.CTkEntry(parent,
                                 placeholder_text='Surname',
@@ -218,7 +218,7 @@ class SigninPage(ctk.CTkFrame):
                                 height=30,
                                 font=('Arial',14),
                                 )
-        self.surname_entry.grid(row=6, column=0, pady=(20, 10))
+        self.surname_entry.grid(row=6, column=1, pady=(20, 10))
 
         self.dob_entry=ctk.CTkEntry(parent,
                                 placeholder_text='Date of Birth',
@@ -226,7 +226,7 @@ class SigninPage(ctk.CTkFrame):
                                 height=30,
                                 font=('Arial',14)
                                 )
-        self.dob_entry.grid(row=7, column=0, pady=(20, 10))
+        self.dob_entry.grid(row=7, column=1, pady=(20, 10))
 
         self.age_entry=ctk.CTkEntry(parent,
                                 placeholder_text='Age',
@@ -234,7 +234,7 @@ class SigninPage(ctk.CTkFrame):
                                 height=30,
                                 font=('Arial',14),
                                 )
-        self.age_entry.grid(row=8, column=0, pady=(20, 10))
+        self.age_entry.grid(row=8, column=1, pady=(20, 10))
 
         self.cob_entry=ctk.CTkEntry(parent,
                                 placeholder_text='City of Birth',
@@ -242,7 +242,7 @@ class SigninPage(ctk.CTkFrame):
                                 height=30,
                                 font=('Arial',14)
                                 )
-        self.cob_entry.grid(row=9, column=0, pady=(20, 10))
+        self.cob_entry.grid(row=9, column=1, pady=(20, 10))
 
         self.cor_entry=ctk.CTkEntry(parent,
                                 placeholder_text='City of Recidency',
@@ -250,7 +250,7 @@ class SigninPage(ctk.CTkFrame):
                                 height=30,
                                 font=('Arial',14),
                                 )
-        self.cor_entry.grid(row=10, column=0, pady=(20, 10))
+        self.cor_entry.grid(row=10, column=1, pady=(20, 10))
 
         self.cap_entry=ctk.CTkEntry(parent,
                                 placeholder_text='CAP',
@@ -258,7 +258,7 @@ class SigninPage(ctk.CTkFrame):
                                 height=30,
                                 font=('Arial',14)
                                 )
-        self.cap_entry.grid(row=11, column=0, pady=(20, 10))
+        self.cap_entry.grid(row=11, column=1, pady=(20, 10))
 
         # === Buttons ===
         signin_button = ctk.CTkButton(
@@ -269,7 +269,7 @@ class SigninPage(ctk.CTkFrame):
             font=ctk.CTkFont(size=16),
             command=self.signin_callback
             )
-        signin_button.grid(row=13, column=0, padx=115, pady=10)
+        signin_button.grid(row=13, column=1, padx=115, pady=10)
 
         # === Outcome Label ===
         self.outcome_label=ctk.CTkLabel(parent,
@@ -277,7 +277,7 @@ class SigninPage(ctk.CTkFrame):
                                         font=('Arial',12),
                                         width=300,
                                         height=30)
-        self.outcome_label.grid(row=12, column=0, padx=35, pady=10)
+        self.outcome_label.grid(row=12, column=1, padx=35, pady=10)
     
     def signin_callback(self):
         user= self.user_entry.get()

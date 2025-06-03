@@ -616,11 +616,17 @@ class IssuePrescription(ctk.CTkFrame):
         # Get the ID of the newly inserted prescription
         prescription_id = self.cursor.lastrowid
 
+        self.cursor.execute("""
+                        SELECT drug_id 
+                        FROM Drugs
+                        WHERE name = ?
+                            """, (drug_name,))
+        drug_id = self.cursor.fetchone()[0]
         # Insert into PrescriptionDrugs table
         self.cursor.execute("""
-            INSERT INTO PrescriptionDrugs (prescription_id, drug_name, dosage, duration, notes)
-            VALUES (?, ?, ?, ?, ?)
-        """, (prescription_id, drug_name, dosage, duration, notes))
+            INSERT INTO PrescriptionDrugs (prescription_id, drug1, notes)
+            VALUES (?, ?, ?)
+        """, (prescription_id, drug_id, notes))
         # Should insert into Drugs table if not exists
 
         # Insert into Therapy table

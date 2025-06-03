@@ -159,12 +159,12 @@ class Main(ctk.CTkFrame):
         self.appointments_container = self
 
         # === Header Title ===
-        title_label = ctk.CTkLabel(self, text="Welcome, Mario!", font=ctk.CTkFont(size=22, weight="bold"))
+        title_label = ctk.CTkLabel(self, text="Welcome, Pippo!", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=0, pady=(20, 10))
 
         # === Profile Picture ===
         try:
-           profile_img = ctk.CTkImage(light_image=Image.open("App/patientprofile.png"), size=(80, 80))
+           profile_img = ctk.CTkImage(light_image=Image.open("App/patientprofile2.png"), size=(80, 80))
            profile_pic = ctk.CTkLabel(self, image=profile_img, text="")
            profile_pic.grid(row=1, column=0, pady=(0, 20))
         except:
@@ -283,7 +283,7 @@ class Main(ctk.CTkFrame):
         row = 3
 
         for appointment in appointments:
-            time_str = appointment[0].split(' ')[1][:5]
+            time_str = appointment[0]
             visit_type = appointment[1]
             self.cursor.execute("SELECT Visit FROM Visits WHERE visit_code = ?", (visit_type,))
             visit_name = self.cursor.fetchone()
@@ -294,7 +294,7 @@ class Main(ctk.CTkFrame):
             if self.manage_mode:
                 apt_text = f"{time_str} 🕒 | {doctor_name}"
             else:
-                apt_text = f"{time_str} 🕒 | {doctor_name} | {visit_name_str}"
+                apt_text = f"{time_str} 🕒 | {doctor_name}"
 
 
             apt_button = ctk.CTkButton(
@@ -596,12 +596,12 @@ class AppointmentPage(ctk.CTkFrame):
             self.cursor.execute("""
                 UPDATE Appointments
                 SET dispo = 0, patient = ?
-                WHERE appointment_id = ? AND disp = 1
+                WHERE appointment_id = ? AND dispo = 1
             """, (self.user_id, appointment_id))
             self.conn.commit()
-            ctk.CTkMessagebox(title="Success", message="Appointment booked!", icon="check")
+            messagebox.showinfo(title="Success", message="Appointment booked!")
         except Exception as e:
-            ctk.CTkMessagebox(title="Error", message=f"Failed to book: {e}", icon="cancel")
+            messagebox.showerror(title="Error", message="Failed to book")
 
        
     def menu_callback(self):
@@ -749,18 +749,18 @@ class PeriodicQuestionnaire(ctk.CTkFrame):
         answers = {k: v.get() for k, v in self.answer_vars.items()}
         save_submission(self.patient_id, answers)
         messagebox.showinfo("Success", "Questionnaire successfully submitted!")
-        self.destroy()
+        self.controller.show_internal_page("data")  # Redirect to health data page after submission
         
 class HealthDataPage(ctk.CTkFrame):
-    def submit(self):
-        if not all(var.get() != 0 for var in self.answer_vars.values()):
-            messagebox.showerror("Error", "Answer all questions.")
-            return
+    # def submit(self):
+    #     if not all(var.get() != 0 for var in self.answer_vars.values()):
+    #         messagebox.showerror("Error", "Answer all questions.")
+    #         return
 
-        answers = {k: v.get() for k, v in self.answer_vars.items()}
-        save_submission(self.patient_id, answers)
-        messagebox.showinfo("Success", "Questionnaire successfully submitted, come back in 3 days!")
-        self.destroy()
+    #     answers = {k: v.get() for k, v in self.answer_vars.items()}
+    #     save_submission(self.patient_id, answers)
+    #     messagebox.showinfo("Success", "Questionnaire successfully submitted, come back in 3 days!")
+    #     self.destroy()
 
     def __init__(self, master, controller, patient_id, return_to="main"):
             super().__init__(master, fg_color="white")
@@ -908,8 +908,8 @@ class HealthDataPage(ctk.CTkFrame):
             if visit_reports:
                 columns_per_row = 4
                 sticky = ["e", "w"]
-                for i, (appointment_id, file_path, created_at) in enumerate(sensor_reports):
-                    display_text = f"At-home — {created_at.split(' ')[0]}"
+                for i, (appointment_id, file_path, created_at) in enumerate(visit_reports):
+                    display_text = f"{created_at.split(' ')[0]}"
                     ctk.CTkButton(
                         parent,
                         text=f"📄 {display_text}",
