@@ -109,12 +109,10 @@ class SettingsPage(ctk.CTkFrame):
         updated_data = {field: entry.get() for field, entry in self.inputs.items()}
 
         try:
-            # Input validation example for date and age
             datetime.datetime.strptime(updated_data["DoB"], "%Y-%m-%d")
             updated_data["Age"] = int(updated_data["Age"])
             updated_data["CAP"] = int(updated_data["CAP"])
 
-            # Update statement
             self.cursor.execute("""
                 UPDATE Patients SET
                     Name=?,
@@ -150,25 +148,50 @@ class Main(ctk.CTkFrame):
         super().__init__(master, fg_color="white")
         self.controller = controller
         self.user_id = user_id
-        self.setup_gui(user_id)
+
         self.conn = sqlite3.connect('App/Database/gui_database.db')
         self.cursor = self.conn.cursor()
         self.manage_mode = False 
 
+        self.setup_gui(user_id)
+
+
     def setup_gui(self, user_id): 
         self.appointments_container = self
 
-        # === Header Title ===
-        title_label = ctk.CTkLabel(self, text="Welcome, Pippo!", font=ctk.CTkFont(size=22, weight="bold"))
+       # === Header Title ===
+        query = """
+            SELECT 
+                P.Name
+            FROM Patients P
+            WHERE P.user_id = ? 
+        """
+        self.cursor.execute(query, (user_id,))
+        result = self.cursor.fetchone()
+        name = result[0] if result else "User"
+
+        title_label = ctk.CTkLabel(self, text=f"Welcome, {name}", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=0, pady=(20, 10))
 
         # === Profile Picture ===
-        try:
-           profile_img = ctk.CTkImage(light_image=Image.open("App/patientprofile2.png"), size=(80, 80))
-           profile_pic = ctk.CTkLabel(self, image=profile_img, text="")
-           profile_pic.grid(row=1, column=0, pady=(0, 20))
-        except:
-           pass
+        query = """
+            SELECT 
+                P.profilepic
+            FROM Patients P
+            WHERE P.user_id = ? 
+        """
+        self.cursor.execute(query, (user_id,))
+        result = self.cursor.fetchone()
+        path = result[0] if result else None
+
+        if path:
+            try:
+                profile_img = ctk.CTkImage(light_image=Image.open(path), size=(80, 80))
+                profile_pic = ctk.CTkLabel(self, image=profile_img, text="")
+                profile_pic.grid(row=1, column=0, pady=(0, 20))
+            except Exception as e:
+                print(f"Failed to load profile picture: {e}")
+
 
         # === Buttons ===
 
@@ -538,7 +561,7 @@ class AppointmentPage(ctk.CTkFrame):
         self.display_appointments(parent)
 
     def display_appointments(self, parent):
-    # Clear old content (starting from row 3)
+        # Clear old content (starting from row 3)
         for widget in parent.winfo_children():
             info = widget.grid_info()
             if isinstance(widget, (ctk.CTkLabel, ctk.CTkButton)) and info.get("row", 0) >= 3:
@@ -986,7 +1009,7 @@ class HealthDataPage(ctk.CTkFrame):
                     "Last Month": "Mario Rossi/Graphs/last_month.png",
                     "All Time": "Mario Rossi/Graphs/last_month.png",
                 }.get(choice, "Mario Rossi/Graphs/two_weeks.png")
-                # Should put the fetched name instead of manually, it is to test. The graph should also be shown directly by python
+                # Should put the fetched name instead of manually, this is to test. The graph should also be shown directly by python
                 try:
                     img = ctk.CTkImage(light_image=Image.open(image_path), size=(300, 200))
                     image_label.configure(image=img, text="")
@@ -1151,7 +1174,7 @@ class EmergencyPage(ctk.CTkFrame):
         right_title.grid(row=0, column=0, padx=20, pady=(10, 10), sticky="w")
 
 
-        # Doctor info (dummy data – get this from database in real application)
+        # Doctor info
         doc_info = ctk.CTkLabel(
             master=right_frame,
             text="Dr. Gianna Rossi \nEmail: dr.rossi@quiet.com\nPhone: +123 456 7890",
@@ -1287,10 +1310,10 @@ class Home_patPage(ctk.CTkFrame):
         self.pages[page_name].grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
     def show_questionnaire_page(self, master, controller, patient_id):
-        # Hide or destroy the current page if it exists
+        # Hide the current page if it exists
         current_page = self.pages.get("current")
         if current_page is not None:
-            current_page.grid_forget()  # or use current_page.destroy() if you want to fully delete it
+            current_page.grid_forget() 
 
         # Create and show the new page
         questionnaire_page = PeriodicQuestionnaire(master, controller, patient_id)

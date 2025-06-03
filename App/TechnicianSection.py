@@ -381,7 +381,7 @@ class AddSensors(ctk.CTkFrame):
 
             self.conn.commit()
             messagebox.showinfo("Success", "Sensor added successfully.")
-            self.controller.show_internal_page("main")  # Update this with your actual return method
+            self.controller.show_internal_page("main") 
 
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
@@ -400,10 +400,9 @@ class Main(ctk.CTkFrame):
             self.conn.commit()
 
     def display_sensors(self, parent):
-        # Configure columns for equal widths except the delete column
         for i in range(5):
             parent.grid_columnconfigure(i, weight=1, uniform="sensor_cols")
-        parent.grid_columnconfigure(4, weight=0, minsize=50)  # For delete button
+        parent.grid_columnconfigure(4, weight=0, minsize=50)  
 
         # Remove old sensor rows (row >= 3)
         for widget in parent.winfo_children():
@@ -506,6 +505,41 @@ class Main(ctk.CTkFrame):
         title_label = ctk.CTkLabel(parent, text="Welcome technician!", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=1, columnspan=3, pady=(20, 10), sticky="w")
 
+        #        # === Header Title ===
+        # query = """
+        #     SELECT 
+        #         T.Name
+        #     FROM Technicians T
+        #     WHERE T.user_id = ? 
+        # """
+        # self.cursor.execute(query, (user_id,))
+        # result = self.cursor.fetchone()
+        # name = result[0] if result else "User"
+
+        # title_label = ctk.CTkLabel(self, text=f"Welcome, {name}", font=ctk.CTkFont(size=22, weight="bold"))
+        # title_label.grid(row=0, column=0, pady=(20, 10))
+
+        # # === Profile Picture ===
+        # query = """
+        #     SELECT 
+        #         T.profilepic
+        #     FROM Technicians T
+        #     WHERE T.user_id = ? 
+        # """
+        # self.cursor.execute(query, (user_id,))
+        # result = self.cursor.fetchone()
+        # path = result[0] if result else None
+
+        # if path:
+        #     try:
+        #         profile_img = ctk.CTkImage(light_image=Image.open(path), size=(80, 80))
+        #         profile_pic = ctk.CTkLabel(self, image=profile_img, text="")
+        #         profile_pic.grid(row=1, column=0, pady=(0, 20))
+        #     except Exception as e:
+        #         print(f"Failed to load profile picture: {e}")
+
+
+
         # === Bottom Menu ===
         menu_bar = ctk.CTkFrame(parent, fg_color="transparent")
         menu_bar.grid(row=0, column=3, pady=20, sticky="e")
@@ -593,7 +627,6 @@ class Home_tecPage(ctk.CTkFrame):
             #"manage": ManageSensors(self, self, self.user_id, sensor_id = None),
         }
          
-        # Hide all initially -> not necessary
         for page in self.pages.values():
             page.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
             page.grid_forget()
@@ -611,8 +644,8 @@ class Home_tecPage(ctk.CTkFrame):
         manage_page.grid(row=0, column=0, sticky="nsew")
         manage_page.tkraise()
 
-    def see_report(self, sensor_id, user_id):
-        see_report = SeeReport(self, sensor_id, user_id)
-        self.pages["see_report"] = see_report
-        see_report.grid(row=0, column=0, sticky="nsew")
-        see_report.tkraise()
+    # def see_report(self, sensor_id, user_id):
+    #     see_report = SeeReport(self, sensor_id, user_id)
+    #     self.pages["see_report"] = see_report
+    #     see_report.grid(row=0, column=0, sticky="nsew")
+    #     see_report.tkraise()

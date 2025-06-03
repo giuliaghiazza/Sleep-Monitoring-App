@@ -23,7 +23,7 @@ def logout():
     app_path = os.path.join(os.path.dirname(__file__), "App.py")
     python = sys.executable
     subprocess.Popen([python, app_path])  # Launch App.py as new process
-    sys.exit()  # Exit current GUI app
+    sys.exit()  
 
 
 def show_pdf_in_new_window(pdf_path):
@@ -55,7 +55,7 @@ def show_pdf_in_new_window(pdf_path):
 
     for page_num in range(len(doc)):
         page = doc.load_page(page_num)
-        pix = page.get_pixmap(dpi=100)  # 100 DPI = lighter and scrollable
+        pix = page.get_pixmap(dpi=100) 
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         photo = ImageTk.PhotoImage(img)
 
@@ -64,7 +64,6 @@ def show_pdf_in_new_window(pdf_path):
         image_refs.append(photo)
         label.pack(pady=10)
 
-    # ==============================
     # Scroll binding (cross-platform)
     def _on_mousewheel(event):
         # Windows and Linux
@@ -206,7 +205,6 @@ class openQuestionaire(ctk.CTkFrame):
         self.questionnaire_gui(scrollable_frame)
 
     def questionnaire_gui(self, parent):
-        # Add your questionnaire GUI code here
         title_label = ctk.CTkLabel(parent, text="📝 Questionnaire", font=ctk.CTkFont(size=22, weight="bold")
                                    )
         title_label.grid(row=0, column=1, pady=(20, 10))
@@ -358,7 +356,7 @@ class VisitDetails(ctk.CTkFrame):
        
         row = 2
         # ==== Questionnaire or Sensor Report ====
-        if visit_type == 1:  # Assuming '1' = first visit
+        if visit_type == 1: 
             quest_button = ctk.CTkButton(parent, text="Open First Visit Questionnaire PDF", command= lambda: self.controller.show_open_questionnaire(self.appointment_id, patient_id, visit_type="first_visit"))
             quest_button.grid(row=2, column=1, pady=10)
             row = 3
@@ -451,12 +449,6 @@ class VisitDetails(ctk.CTkFrame):
                 ctk.CTkLabel(parent, text=info, font=ctk.CTkFont(size=14)).grid(row=row+5+idx, column=1, sticky="w", pady=2) 
             row = row + len(therapy_list)
 
-        # ==== Add Therapy (Editable) ====
-        # ctk.CTkLabel(parent, text="Add New Therapy:", font=ctk.CTkFont(size=16)).grid(row=row+6, column=1, pady=5)
-        # self.therapy_entry = ctk.CTkTextbox(parent, height=60, width=300)
-        # self.therapy_entry.insert("1.0", therapy if therapy else "")
-        # self.therapy_entry.grid(row=row+7, column=1, pady=5)
-
         # ==== Button to Issue Prescription ====
         prescribe_button = ctk.CTkButton(
             parent, text="➕ Issue Prescription", fg_color="#1e81b0", hover_color="#145374"
@@ -534,13 +526,11 @@ class IssuePrescription(ctk.CTkFrame):
         self.prescription_gui(scrollable_frame)
 
     def prescription_gui(self, parent):
-        # Add your prescription GUI code here
-        title_label = ctk.CTkLabel(parent, text="💊 Issue Prescription", font=ctk.CTkFont(size=22, weight="bold"))
+        title_label = ctk.CTkLabel(parent, text="💊 Issue Prescription for a drug", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=1, pady=(20, 10))
 
 
         # Back Button
-
         if self.mode == 1:
             back_command = lambda: self.controller.show_patient_page(self.user_id, self.patient_id)
         else:
@@ -560,6 +550,7 @@ class IssuePrescription(ctk.CTkFrame):
         back_button.grid(row=0, column=0, padx=(10, 5), pady=(20, 10), sticky="w")
 
         # Prescription Form
+
         ctk.CTkLabel(parent, text="Patient ID: " + str(self.patient_id), font=ctk.CTkFont(size=14)).grid(row=1, column=0, columnspan=2)
 
         ctk.CTkLabel(parent, text="Drug Name:", font=ctk.CTkFont(size=14)).grid(row=2, column=0)
@@ -580,9 +571,29 @@ class IssuePrescription(ctk.CTkFrame):
 
         # Issue Prescription Button
         issue_button = ctk.CTkButton(
-            parent, text="➕ Issue Prescription", fg_color="#1e81b0", hover_color="#145374",
+            parent, text="➕ Issue Drug Prescription", fg_color="#1e81b0", hover_color="#145374",
             command=self.issue_prescription)
         issue_button.grid(row=6, column=1, pady=(10, 20))
+
+        
+        title_label = ctk.CTkLabel(parent, text="⚡ Issue Prescription for a sensor", font=ctk.CTkFont(size=22, weight="bold"))
+        title_label.grid(row=8, column=1, pady=(20, 10))
+
+        # Prescription Form
+
+        ctk.CTkLabel(parent, text="Patient ID: " + str(self.patient_id), font=ctk.CTkFont(size=14)).grid(row=9, column=0, columnspan=2)
+
+        ctk.CTkLabel(parent, text="Sensor Type::", font=ctk.CTkFont(size=14)).grid(row=10, column=0)
+        self.sensor_entry = ctk.CTkEntry(parent)
+        self.sensor_entry.grid(row=10, column=1)
+
+        # Issue Prescription Button
+        issue_button_sensor = ctk.CTkButton(
+            parent, text="➕ Issue Sensor Prescription", fg_color="#1e81b0", hover_color="#145374",
+            command=self.issue_prescription_sensor)
+        issue_button_sensor.grid(row=6, column=1, pady=(10, 20))
+
+        # should also add a section to prescribe other visits
 
     def issue_prescription(self):
         drug_name = self.drug_name_entry.get().strip()
@@ -622,21 +633,46 @@ class IssuePrescription(ctk.CTkFrame):
                         WHERE name = ?
                             """, (drug_name,))
         drug_id = self.cursor.fetchone()[0]
+        
         # Insert into PrescriptionDrugs table
         self.cursor.execute("""
             INSERT INTO PrescriptionDrugs (prescription_id, drug1, notes)
             VALUES (?, ?, ?)
         """, (prescription_id, drug_id, notes))
         # Should insert into Drugs table if not exists
+    
+    def issue_prescription_sensor(self):
+        sensor_type = self.sensor_type_entry.get().strip()
+        notes = self.notes_entry.get("1.0", "end-1c").strip()
 
-        # Insert into Therapy table
+        # Get full patient name for the file path
+        self.cursor.execute("SELECT name || ' ' || surname FROM Patients WHERE user_id = ?", (self.patient_id,))
+        result = self.cursor.fetchone()
+        patient_fullname = result[0] if result else "Unknown_Patient"
+
+        # Define PDF path
+        path = f"{patient_fullname}/Reports/Prescriptions/{self.patient_id}_sensor_prescription.pdf"
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        presc_type = "Sensor Prescription"
+
+        # Insert into Prescription table
         self.cursor.execute("""
-            INSERT INTO Therapy (patient, drug1, dosage, duration, notes)
-            VALUES (?, (SELECT drug_id FROM Drugs WHERE name = ?), ?, ?, ?)
-        """, (self.patient_id, drug_name, dosage, duration, notes))
-        
+            INSERT INTO Prescription (appointment_id, patient, doctor, file_path, created_at, type)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (self.appointment_id, self.patient_id, self.user_id, path, created_at, presc_type))
+
+        # Get the new prescription ID
+        prescription_id = self.cursor.lastrowid
+
+        # Insert into PrescriptionDevices table
+        self.cursor.execute("""
+            INSERT INTO PrescriptionDevices (prescription_id, sensor_type, notes, patient)
+            VALUES (?, ?, ?, ?)
+        """, (prescription_id, sensor_type, notes, self.patient_id))
+
+        # Commit and notify
         self.conn.commit()
-        messagebox.showinfo("Success", "Prescription issued successfully!")
+        messagebox.showinfo("Success", "Sensor prescription issued successfully!")
         self.controller.show_patient_page(self.user_id, self.patient_id)
 
 class PatientPage(ctk.CTkFrame): 
@@ -691,7 +727,7 @@ class PatientPage(ctk.CTkFrame):
 
         row += 1
 
-        # Doctor info (dummy data – customize this)        
+        # Doctor info     
         if patient_id == 8:
             pat_info = ctk.CTkLabel(
                 parent,
@@ -888,6 +924,41 @@ class Main(ctk.CTkFrame):
             profile_pic.grid(row=0, column=0, padx=10, pady=10, sticky="w")
         except:
             pass
+
+
+    #    # === Header Title ===
+    #     query = """
+    #         SELECT 
+    #             D.Name
+    #         FROM Doctors D
+    #         WHERE D.user_id = ? 
+    #     """
+    #     self.cursor.execute(query, (user_id,))
+    #     result = self.cursor.fetchone()
+    #     name = result[0] if result else "User"
+
+    #     title_label = ctk.CTkLabel(self, text=f"Welcome, {name}", font=ctk.CTkFont(size=22, weight="bold"))
+    #     title_label.grid(row=0, column=0, pady=(20, 10))
+
+    #     # === Profile Picture ===
+    #     query = """
+    #         SELECT 
+    #             D.profilepic
+    #         FROM Doctors D
+    #         WHERE D.user_id = ? 
+    #     """
+    #     self.cursor.execute(query, (user_id,))
+    #     result = self.cursor.fetchone()
+    #     path = result[0] if result else None
+
+    #     if path:
+    #         try:
+    #             profile_img = ctk.CTkImage(light_image=Image.open(path), size=(80, 80))
+    #             profile_pic = ctk.CTkLabel(self, image=profile_img, text="")
+    #             profile_pic.grid(row=1, column=0, pady=(0, 20))
+    #         except Exception as e:
+    #             print(f"Failed to load profile picture: {e}")
+
 
         ctk.CTkLabel(
             header_frame, 

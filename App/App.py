@@ -51,7 +51,7 @@ class LoginPage(ctk.CTkFrame):
                                 height=30,
                                 font=('Arial',14)
                                 )
-        self.user_entry.grid(row=2, column=0, pady=(20, 10))   #numeri da rivedere
+        self.user_entry.grid(row=2, column=0, pady=(20, 10))
 
         self.pass_entry=ctk.CTkEntry(self,
                                 placeholder_text='Password',
@@ -60,7 +60,7 @@ class LoginPage(ctk.CTkFrame):
                                 font=('Arial',14),
                                 show='*'
                                 )
-        self.pass_entry.grid(row=3, column=0, pady=(10, 10))    #numeri da rivedere
+        self.pass_entry.grid(row=3, column=0, pady=(10, 10))   
 
         # === Buttons ===
         button_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -68,7 +68,7 @@ class LoginPage(ctk.CTkFrame):
 
         login_button = ctk.CTkButton(
             master=button_frame,
-            text="Log-in",     #da aggiungere icona se vogliamo metterne una
+            text="Log-in",   
             height=50,
             width=120,
             fg_color="#57cc99",
@@ -76,11 +76,11 @@ class LoginPage(ctk.CTkFrame):
             font=ctk.CTkFont(size=16),
             command=self.login_callback
         )
-        login_button.pack(side="right", padx=10)    #numeri da rivedere
+        login_button.pack(side="right", padx=10)  
  
         signin_button = ctk.CTkButton(
             master=button_frame,
-            text="Sign-in",     #da aggiungere icona se vogliamo metterne una
+            text="Sign-in",   
             height=50,
             width=120,
             fg_color="#38a3a5",
@@ -88,14 +88,14 @@ class LoginPage(ctk.CTkFrame):
             font=ctk.CTkFont(size=16),
             command=lambda: self.controller.show_page("Sign-in")
         )
-        signin_button.pack(side="left", padx=10)    #numeri da rivedere, posso fare così per affiancare 2 bottoni?
+        signin_button.pack(side="left", padx=10)   
 
         # === Outcome Label ===
         self.outcome_label=ctk.CTkLabel(self,
                                         text='',
                                         font=('Arial',12),
                                         width=300,
-                                        height=30)      #larghezza come finestra se so che non ho altro sulla riga
+                                        height=30)    
         self.outcome_label.grid(row=5, column=0, padx=35, pady=10)
 
     #Query database
@@ -113,7 +113,7 @@ class LoginPage(ctk.CTkFrame):
             password_try= self.cursor.fetchone()[0]
             if pw==password_try:
                 #self.outcome_lable.configure(text='Login Successful, welcome {user[0]}')
-                #self.outcome_lable.configure(text_color='green')                           #se lo sto mandando ad un altra pagina non penso serva far vedere sta roba
+                #self.outcome_lable.configure(text_color='green')                          
                 self.cursor.execute('SELECT role FROM Users WHERE username=?', user)
                 role = self.cursor.fetchone()[0]
                 self.cursor.execute('SELECT user_id FROM Users WHERE username=?', user)
@@ -336,7 +336,7 @@ class App():
         for page in self.pages.values():
             page.grid_forget()
 
-        # Create page with user_id if neede
+        # Create page with user_id if needed
         page = self.pages.get(page_name)
 
         if hasattr(page, "receive_user_id"):
@@ -362,17 +362,10 @@ class App():
             "Sign-in": SigninPage(self.root, self),
         }
 
-        self.show_page("log")   #prima era home, se non funziona torno qua
+        self.show_page("log")  
         self.root.mainloop()       
         
 
 # Start the app
-if __name__ == "__main__":
-    App()
+App()
 
-
-#per ogni nuova pagina:
-#aggiornare dictionary
-#mettere la stessa funzione init per tutte, con master ecc
-#far chiamare ad init una def nella stessa classe che descriva la pagina stessa
-#se serve chiamare una pagina nuova bisogna passare dal controller
