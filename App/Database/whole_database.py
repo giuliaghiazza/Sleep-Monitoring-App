@@ -267,19 +267,6 @@ c.execute("""CREATE TABLE IF NOT EXISTS SensorsReport(
 # The id links to a session table with all the considered sessions
 # Each session is linked to different sensors, sessions+sensors are linked to the acquisition
 
-c.execute("""CREATE TABLE IF NOT EXISTS SensorsPerformanceReport(
-          spreport_id integer primary key AUTOINCREMENT,
-          patient integer,  
-          session_id integer,
-          file_path path,
-          created_at DATETIME,
-          code_device integer,
-          warnings integer,
-          FOREIGN KEY (code_device) REFERENCES Sensors(code_device)
-          FOREIGN KEY (patient) REFERENCES Patients(user_id)
-          )
-          """)
-
 # Questionnaire and Diary for patient
 
 c.execute("""
