@@ -60,6 +60,8 @@ c.execute("""CREATE TABLE IF NOT EXISTS Patients(
           Theraphy varchar, 
           profilepic PATH,
           assigned_doctor integer,
+          mail varchar,
+          phone integer,
           FOREIGN KEY (user_id) REFERENCES Users(user_id),
           FOREIGN KEY (assigned_doctor) REFERENCES Doctors(user_id)
           )

@@ -726,8 +726,14 @@ class PatientPage(ctk.CTkFrame):
         ).grid(row=row, column=0, columnspan=2, padx=10, pady=10, sticky="w")
 
         row += 1
+        # self.cursor.execute("""
+        #     SELECT p.email, p.phone
+        #     FROM Patients p
+        #     WHERE p.assigned_doctor = ?
+        # """, (user_id,))
+        # patient = self.cursor.fetchone()
 
-        # Doctor info     
+        # Patient info     
         if patient_id == 8:
             pat_info = ctk.CTkLabel(
                 parent,

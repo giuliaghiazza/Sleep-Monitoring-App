@@ -622,6 +622,47 @@ class AppointmentPage(ctk.CTkFrame):
                 WHERE appointment_id = ? AND dispo = 1
             """, (self.user_id, appointment_id))
             self.conn.commit()
+
+            # THIS SECTION IS USED TO CHECK THE VISIT TYPE AND UPDATE THE ASSIGNED DOCTOR, data is currently added manually for testing
+            # # Get doctor_id for the appointment being booked
+            # self.cursor.execute("""
+            #     SELECT doctor
+            #     FROM Appointments
+            #     WHERE appointment_id = ?
+            # """, (appointment_id,))
+            # doctor_row = self.cursor.fetchone()
+
+            # doctor_id = doctor_row[0]
+
+            # # Check if the patient already had an appointment with this doctor: if they have one, this is a follow up
+            # self.cursor.execute("""
+            #     SELECT COUNT(*)
+            #     FROM Appointments
+            #     WHERE patient = ? AND doctor = ? AND appointment_id != ?
+            # """, (self.user_id, doctor_id, appointment_id))
+            # count_row = self.cursor.fetchone()
+            # has_previous_appointment = count_row[0] > 0
+
+            # # Set visit_type based on previous appointments
+            # visit_type = 2 if has_previous_appointment else 1
+
+            # # Update appointment with correct visit_type and patient ID
+            # self.cursor.execute("""
+            #     UPDATE Appointments
+            #     SET visit_type = ?
+            #     WHERE appointment_id = ?
+            # """, (visit_type, appointment_id))
+            # self.conn.commit()
+
+            # # Update assigned doctor only if this is a first visit
+            # if visit_type == 1:
+            #     self.cursor.execute("""
+            #         UPDATE Patients
+            #         SET assigned_doctor = ?
+            #         WHERE user_id = ?
+            #     """, (doctor_id, self.user_id))
+            #     self.conn.commit()
+
             messagebox.showinfo(title="Success", message="Appointment booked!")
         except Exception as e:
             messagebox.showerror(title="Error", message="Failed to book")
@@ -1173,6 +1214,24 @@ class EmergencyPage(ctk.CTkFrame):
         )
         right_title.grid(row=0, column=0, padx=20, pady=(10, 10), sticky="w")
 
+        # self.cursor.execute("""
+        #     SELECT d.email, d.phone
+        #     FROM Doctors d
+        #     JOIN Appointments a ON d.user_id = a.doctor
+        #     WHERE a.patient = ?
+        #     LIMIT 1
+        # """, (user_id,))
+        # doctor = self.cursor.fetchone()
+
+        # self.cursor.execute("""
+        #     SELECT d.email, d.phone, p.assigned_doctor
+        #     FROM Doctors d
+        #     JOIN Patients p ON d.user_id = p.assigned_doctor
+        #     WHERE p.user_id = ?
+        #     LIMIT 1
+        # """, (user_id,))
+        # doctor = self.cursor.fetchone()
+        # This is to be used if we assign a specific doctor to each patient
 
         # Doctor info
         doc_info = ctk.CTkLabel(
@@ -1182,6 +1241,7 @@ class EmergencyPage(ctk.CTkFrame):
             justify="left"
         )
         doc_info.grid(row=1, column=0, padx=20, pady=10, sticky="w")
+        # placeholder, the data used should be the fetched one
 
     from datetime import datetime
 
