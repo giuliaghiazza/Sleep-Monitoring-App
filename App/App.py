@@ -135,7 +135,7 @@ class SigninPage(ctk.CTkFrame):
     def __init__(self, master, controller):
         super().__init__(master, fg_color="white")
         self.controller = controller
-        self.conn = sqlite3.connect('gui_database.db')
+        self.conn = sqlite3.connect('App/Database/gui_database.db')
         self.cursor = self.conn.cursor()
         scrollable_frame = ctk.CTkScrollableFrame(self, width=360, height=520, fg_color="white")
         scrollable_frame.pack(pady=20, padx=20, fill="both", expand=True)

@@ -10,7 +10,7 @@ c = connection.cursor()
 
 # List of doctors: (username, password, Name, Surname, Codice_Fiscale)
 doctors = [
-    ('Gianna', 'Bianchi', 'Gianna', 'Bianchi', 'GHZGLI02R47D969Q'),
+    ('Gianna', 'Deluca', 'Gianna', 'Deluca', 'GDADLC02R47D969Q'),
     ('MarcoV', 'MarcoVpass', 'Marco', 'Verdi', 'MRCVRD80A01H501Z'),
 ]
 
@@ -27,8 +27,8 @@ for username, psw, name, surname, codice_fiscale in doctors:
 
 # List of Technicians: (username, password, Name, Surname, Codice_Fiscale)
 doctors = [
-    ('Luca', 'Gialli', 'Luca', 'Gialli', 'LCAGLL96R47D969Q'),
-    ('Lisa', 'Scotti', 'Lisa', 'Lisa', 'LSASCT84R47D969Q'),
+    ('Luca', 'Scotti', 'Luca', 'Scotti', 'LCASCT96R47D969Q'),
+    ('Lisa', 'Gialli', 'Lisa', 'Lisa', 'LSAGLL84R47D969Q'),
 ]
 
 for username, psw, name, surname, codice_fiscale in doctors:
@@ -44,7 +44,7 @@ for username, psw, name, surname, codice_fiscale in doctors:
 
 # List of patients: (username, password, Name, Surname)
 patients = [
-    ('Pippo', 'Franco', 'Pippo', 'Rossi', 37, "Male", 1, None, "1988-05-15"),
+    ('Andrea', 'Greco', 'Andrea', 'Greco', 37, "Male", 1, None, "1988-05-15"),
     ('LucaM', 'pass123', 'Luca', 'Marini', 23, "Male", None, None, None),
     ('AnnaS', 'anna2025', 'Anna', 'Santoro', 57, "Female", None, None, None),
     ('MarioR', 'mario456', 'Mario', 'Rossi', 43, "Male", 1, "Periodic Limb Movements Disorder", None),

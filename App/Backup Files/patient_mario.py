@@ -86,12 +86,6 @@ c.execute("""
     VALUES (?, ?, ?, ?, ?)
 """, (7, 'Mario Rossi/Reports/VisitReports/visit_2025_04_30.pdf', "2025-04-30", 1, 8)) ## Here second one
 
-# === Sensor Performance === 
-c.execute("""
-    INSERT INTO SensorsPerformanceReport (patient, file_path, created_at, code_device)
-    VALUES (?, ?, ?, ?)
-""", (8, 'Mario Rossi/Reports/PerformanceReport/complete_report.pdf', '2025-05-29 12:30', 1))
-
 # Commit changes
 conn.commit()
 conn.close()

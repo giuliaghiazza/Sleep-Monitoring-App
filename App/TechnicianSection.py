@@ -28,14 +28,17 @@ class SeeReport(ctk.CTkFrame):
         self.user_id = user_id
         self.master = master
 
-        self.grid(row=0, column=0, sticky="nsew")
-        self.grid_configure(padx=20, pady=20)
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(2, weight=1)
+        # Entire UI lives inside scroll_frame
+        self.scroll_frame = ctk.CTkScrollableFrame(self, width=750, height=550, fg_color="white")        
+        self.scroll_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=20)
 
-        # Back Button
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.scroll_frame.grid_columnconfigure(0, weight=1)
+
+        # Place back button and title INSIDE scroll_frame
         back_button = ctk.CTkButton(
-            master=self,
+            master=self.scroll_frame,
             text="← Back",
             width=60,
             height=30,
@@ -46,18 +49,14 @@ class SeeReport(ctk.CTkFrame):
         )
         back_button.grid(row=0, column=0, sticky="w", padx=(0, 0), pady=(10, 10))
 
-        # Title
-        self.title_label = ctk.CTkLabel(self, text=f"Sensor Report for ID {sensor_id}", font=("Arial", 20))
+        self.title_label = ctk.CTkLabel(self.scroll_frame, text=f"Sensor Report for ID {sensor_id}", font=("Arial", 20))
         self.title_label.grid(row=1, column=0, pady=(0, 10), sticky="n")
 
-        # Scrollable frame
-        self.scroll_frame = ctk.CTkScrollableFrame(self, label_text="Reports", fg_color="white")
-        self.scroll_frame.grid(row=2, column=0, sticky="nsew", pady=(10, 10))
+        # Load the dynamic report content starting below
+        self.load_data(self.scroll_frame)
 
-        # Load data
-        self.load_data()
 
-    def load_data(self):
+    def load_data(self, parent):
         try:
             conn = sqlite3.connect("App/Database/gui_database.db")  # Replace with your actual database
             c = conn.cursor()
@@ -81,7 +80,7 @@ class SeeReport(ctk.CTkFrame):
 
             if not rows:
                 no_data_label = ctk.CTkLabel(self.scroll_frame, text="No reports found for this sensor.", font=("Arial", 14))
-                no_data_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+                no_data_label.grid(row=3, column=0, padx=10, pady=10, sticky="w")
                 return
 
             for i, row in enumerate(rows):
@@ -94,10 +93,10 @@ class SeeReport(ctk.CTkFrame):
                     f"Malfunction: {row[5]}\n"
 
                 )
-                report_box = ctk.CTkTextbox(self.scroll_frame, height=120, width=600)
+                report_box = ctk.CTkTextbox(self.scroll_frame, height=120)
                 report_box.insert("0.0", report_text)
                 report_box.configure(state="disabled")
-                report_box.grid(row=i, column=0, padx=10, pady=10, sticky="ew")
+                report_box.grid(row=i+3, column=0, padx=10, pady=10, sticky="nsew")
 
             conn.close()
 
@@ -114,12 +113,12 @@ class ManageSensors(ctk.CTkFrame):
         self.sensor_data = self.get_sensor(sensor_id)
         self.main_page = main_page
 
-        scrollable_frame = ctk.CTkScrollableFrame(self, width=750, height=550, fg_color="white")        
-        scrollable_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=20)
+        self.scroll_frame = ctk.CTkScrollableFrame(self, width=750, height=550, fg_color="white")        
+        self.scroll_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=20)
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        self.addgui(scrollable_frame)
+        self.addgui(self.scroll_frame)
 
     def addgui(self, parent):
         parent.grid_columnconfigure(0, weight=0)
@@ -650,13 +649,22 @@ class Home_tecPage(ctk.CTkFrame):
         self.pages[page_name].grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
     def show_manage_sensor_page(self, sensor_id, user_id):
+        if "manage" in self.pages:
+            self.pages["manage"].destroy()
+            del self.pages["manage"]
+
         manage_page = ManageSensors(self, self, user_id, sensor_id, main_page=self.pages["main"])
         self.pages["manage"] = manage_page
         manage_page.grid(row=0, column=0, sticky="nsew")
-        manage_page.tkraise()
+        self.show_internal_page("manage")
+
+
 
     def see_report(self, controller, sensor_id, user_id):
-        see_report = SeeReport(self, controller, sensor_id, user_id)
-        self.pages["see_report"] = see_report
-        see_report.grid(row=0, column=0, sticky="nsew")
-        see_report.tkraise()
+        if "see_report" not in self.pages:
+            see_report_page = SeeReport(self, controller, sensor_id, user_id)
+            self.pages["see_report"] = see_report_page
+            see_report_page.grid(row=0, column=0, sticky="nsew")
+        else:
+            see_report_page = self.pages["see_report"]
+        self.show_internal_page("see_report")

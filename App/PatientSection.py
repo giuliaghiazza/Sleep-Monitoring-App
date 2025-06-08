@@ -274,9 +274,25 @@ class Main(ctk.CTkFrame):
             command= logout
         )
         menu_button.pack()    
+
+
+        self.manage_btn = ctk.CTkButton(
+            master=self,
+            text="🛠 Manage Appointments",
+            height=30,
+            width=70,
+            fg_color="#57cc99",
+            hover_color="#38a3a5",
+            font=ctk.CTkFont(size=12),
+            command=self.toggle_manage_mode 
+        )
+
+
     
     def show_appointments(self, user_id):
         for widget in self.appointments_container.winfo_children():
+            if widget is self.manage_btn:
+                continue  
             grid_info = widget.grid_info()
             if 3 <= int(grid_info.get("row", 0)) < 100 and int(grid_info.get("column", 0)) == 1:
                 widget.destroy()
@@ -363,26 +379,22 @@ class Main(ctk.CTkFrame):
             row += 1
 
         if appointments:
-            self.manage_btn = ctk.CTkButton(
-                master=self,
-                text="🛠 Manage Appointments",
-                height=30,
-                width=70,
-                fg_color="#57cc99",
-                hover_color="#38a3a5",
-                font=ctk.CTkFont(size=12),
-                command=lambda: self.toggle_manage_mode()
-            )
-            self.manage_btn.grid(row = row, column=1, padx=35, pady=0)
+            self.manage_btn.grid(row=row, column=1, padx=35, pady=0)
+            row += 1
+
+
 
     def delete_appointment(self, appointment_id):
         try:
-            self.cursor.execute("DELETE FROM Appointments WHERE appointment_id = ?", (appointment_id,))
+            self.cursor.execute("""
+                UPDATE Appointments 
+                SET patient = NULL, dispo = 1, quest = 0, visit_type = NULL
+                WHERE appointment_id = ?
+            """, (appointment_id,))
             self.conn.commit()
-            messagebox.showinfo("Deleted", "Appointment deleted successfully.")
+            messagebox.showinfo("Updated", "Appointment cleared successfully.")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete appointment: {e}")
-
+            messagebox.showerror("Error", f"Failed to update appointment: {e}")
         # Refresh the appointments list
         self.show_appointments(self.user_id)
 
@@ -985,7 +997,7 @@ class HealthDataPage(ctk.CTkFrame):
             else:
                 ctk.CTkLabel(
                     parent,
-                    text="No sensor reports available.",
+                    text="No visit reports available.",
                     font=ctk.CTkFont(size=13, slant="italic")
                 ).grid(row=row, column=0, padx=10, pady=5, sticky="w")
                 row += 1
@@ -1236,7 +1248,7 @@ class EmergencyPage(ctk.CTkFrame):
         # Doctor info
         doc_info = ctk.CTkLabel(
             master=right_frame,
-            text="Dr. Gianna Rossi \nEmail: dr.rossi@quiet.com\nPhone: +123 456 7890",
+            text="Dr. Giada Deluca \nEmail: dr.deluca@quiet.com\nPhone: +123 456 7890",
             font=("Arial", 13),
             justify="left"
         )

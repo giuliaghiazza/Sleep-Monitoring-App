@@ -12,7 +12,6 @@ import os
 import subprocess
 import sys
 
-
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 
@@ -236,7 +235,7 @@ class openQuestionaire(ctk.CTkFrame):
         result = self.cursor.fetchone()
 
         if not result:
-            ctk.CTkLabel(parent, text="No questionnaire found.", text_color="red").grid(row=0, column=0, padx=10, pady=10)
+            ctk.CTkLabel(parent, text="No questionnaire found.", text_color="red").grid(row=5, column=0, padx=10, pady=10)
             return
 
         (
@@ -396,7 +395,8 @@ class VisitDetails(ctk.CTkFrame):
                                 ).grid(row=row, column=0, padx=20, pady=5, sticky= sticky)
                     row += 1
             else:
-                ctk.CTkLabel(parent, text="No past visit reports available.", font=ctk.CTkFont(size=13, slant="italic")).grid(row=row, column=0, padx=10, pady=5, sticky="w")
+                row += 1
+                ctk.CTkLabel(parent, text="No past visit reports available.", font=ctk.CTkFont(size=13, slant="italic")).grid(row=row, column=0, padx=10, pady=5, sticky="nw")
                 row += 1
 
             ctk.CTkLabel(parent, text="📈 Sensor Reports:", font=ctk.CTkFont(size=14, weight="bold")).grid(row=row-1, column=0, padx=10, pady=(15, 5), sticky="sw")
@@ -460,14 +460,15 @@ class VisitDetails(ctk.CTkFrame):
         # ==== Generate Report ====
         prescribe_button = ctk.CTkButton(
             parent, text="✔️​ Generate Report", fg_color="#145374", hover_color="#1e81b0",
-            command = lambda: self.generate_pdf_report(self, patient_id)
+            command = lambda: self.generate_pdf_report(patient_id)
         )
         prescribe_button.grid(row=101, column=1, pady=(10,500))
 
-    def generate_pdf_report(parent, patient_id):
+    def generate_pdf_report(self, patient_id):
+        print("Function Opened")
         # Fetch patient name
-        parent.cursor.execute("SELECT Name, Surname FROM Patients WHERE user_id = ?", (patient_id,))
-        patient_info = parent.cursor.fetchone()
+        self.cursor.execute("SELECT Name, Surname FROM Patients WHERE user_id = ?", (patient_id,))
+        patient_info = self.cursor.fetchone()
         if not patient_info:
             print("Patient not found")
             return
@@ -490,7 +491,7 @@ class VisitDetails(ctk.CTkFrame):
         y -= 30
 
         # Loop over widgets in column 1 of `parent`
-        for child in parent.winfo_children():
+        for child in self.winfo_children():
             grid_info = child.grid_info()
             if grid_info.get("column") == 1:
                 try:
@@ -525,16 +526,16 @@ class IssuePrescription(ctk.CTkFrame):
 
         self.prescription_gui(scrollable_frame)
 
-    def prescription_gui(self, parent):
+    def prescription_gui(self, parent, ):
         title_label = ctk.CTkLabel(parent, text="💊 Issue Prescription for a drug", font=ctk.CTkFont(size=22, weight="bold"))
         title_label.grid(row=0, column=1, pady=(20, 10))
 
 
         # Back Button
         if self.mode == 1:
-            back_command = lambda: self.controller.show_patient_page(self.user_id, self.patient_id)
-        else:
             back_command = lambda: self.controller.show_visit_page(self.user_id, self.appointment_id)
+        else:
+            back_command = lambda: self.controller.show_patient_page(self.user_id, self.patient_id)
 
 
         back_button = ctk.CTkButton(
@@ -583,7 +584,7 @@ class IssuePrescription(ctk.CTkFrame):
 
         ctk.CTkLabel(parent, text="Patient ID: " + str(self.patient_id), font=ctk.CTkFont(size=14)).grid(row=9, column=0, columnspan=2)
 
-        ctk.CTkLabel(parent, text="Sensor Type::", font=ctk.CTkFont(size=14)).grid(row=10, column=0)
+        ctk.CTkLabel(parent, text="Sensor Type:", font=ctk.CTkFont(size=14)).grid(row=10, column=0)
         self.sensor_entry = ctk.CTkEntry(parent)
         self.sensor_entry.grid(row=10, column=1)
 
@@ -591,7 +592,7 @@ class IssuePrescription(ctk.CTkFrame):
         issue_button_sensor = ctk.CTkButton(
             parent, text="➕ Issue Sensor Prescription", fg_color="#1e81b0", hover_color="#145374",
             command=self.issue_prescription_sensor)
-        issue_button_sensor.grid(row=6, column=1, pady=(10, 20))
+        issue_button_sensor.grid(row=11, column=1, pady=(10, 20))
 
         # should also add a section to prescribe other visits
 
@@ -640,9 +641,12 @@ class IssuePrescription(ctk.CTkFrame):
             VALUES (?, ?, ?)
         """, (prescription_id, drug_id, notes))
         # Should insert into Drugs table if not exists
+        self.conn.commit()
+        messagebox.showinfo("Success", "Drug prescription issued successfully!")
+
     
     def issue_prescription_sensor(self):
-        sensor_type = self.sensor_type_entry.get().strip()
+        sensor_type = self.sensor_entry.get().strip()
         notes = self.notes_entry.get("1.0", "end-1c").strip()
 
         # Get full patient name for the file path
@@ -673,7 +677,6 @@ class IssuePrescription(ctk.CTkFrame):
         # Commit and notify
         self.conn.commit()
         messagebox.showinfo("Success", "Sensor prescription issued successfully!")
-        self.controller.show_patient_page(self.user_id, self.patient_id)
 
 class PatientPage(ctk.CTkFrame): 
     def __init__(self, master, controller, patient_id, user_id, return_to="main"):
@@ -796,7 +799,7 @@ class PatientPage(ctk.CTkFrame):
                 text="➕ Issue Prescription",
                 fg_color="#1e81b0",
                 hover_color="#145374",
-                command=lambda: self.controller.show_prescription_page(self.user_id, patient_id=patient_id, app_id=None)
+                command=lambda: self.controller.show_prescription_page(2, self.user_id, patient_id=patient_id, app_id=None)
             )
             prescribe_button.grid(row=row, column=0, padx=10, pady=(10, 5), sticky="w")
             row += 1
@@ -1187,7 +1190,7 @@ class Home_docPage(ctk.CTkFrame):
         visit_details_page.grid(row=0, column=0, sticky="nsew")
         visit_details_page.tkraise()
     
-    def show_prescription_page(self, user_id, mode, patient_id, app_id = None):
+    def show_prescription_page(self, mode, user_id, patient_id, app_id = None):
         prescription_page = IssuePrescription(self, self, mode, user_id, patient_id, app_id)
         self.pages["prescription"] = prescription_page
         prescription_page.grid(row=0, column=0, sticky="nsew")
