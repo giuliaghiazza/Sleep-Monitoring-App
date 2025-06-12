@@ -678,71 +678,7 @@ class AppointmentPage(ctk.CTkFrame):
             messagebox.showinfo(title="Success", message="Appointment booked!")
         except Exception as e:
             messagebox.showerror(title="Error", message="Failed to book")
-
-       
-    def menu_callback(self):
-        SIDEBAR_WIDTH=250
-        self.sidebar_container = ctk.CTkFrame(self, corner_radius=0, width=SIDEBAR_WIDTH)
-        self.sidebar_container.grid(row=0, column=0, sticky="ns", rowspan=8)
-        self.sidebar_container.grid_rowconfigure(0, weight=1)
-        self.navigation_frame = ctk.CTkFrame(self, corner_radius=0, width=SIDEBAR_WIDTH)
-        self.navigation_frame.grid(row=0, column=0, sticky="nsew", rowspan=8)
-        self.navigation_frame.grid_rowconfigure(4, weight=1)
-
-        self.navigation_frame_label = ctk.CTkLabel(self.navigation_frame, text="Menu",
-                                                             compound="left", font=ctk.CTkFont(size=15, weight="bold"))
-        self.navigation_frame_label.grid(row=0, column=0, padx=20, pady=20)
-        self.home_button = ctk.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Manage Appointment",
-                                                   fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                    anchor="w", command=self.home_button_event, width=SIDEBAR_WIDTH)
-        self.home_button.grid(row=1, column=0, sticky="ew")
-        self.frame_2_button = ctk.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Health data record",
-                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                       anchor="w", command=self.frame_2_button_event, width=SIDEBAR_WIDTH)
-        self.frame_2_button.grid(row=2, column=0, sticky="ew")
-        self.frame_3_button = ctk.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Emergency communications",
-                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                       anchor="w", command=self.frame_3_button_event, width=SIDEBAR_WIDTH)
-        self.frame_3_button.grid(row=3, column=0, sticky="ew")
-        self.frame_4_button = ctk.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Log out",
-                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                       anchor="w", command=self.frame_3_button_event, width=SIDEBAR_WIDTH)
-        self.frame_4_button.grid(row=5, column=0, sticky="sew")
-
-    def select_frame_by_name(self, name):
-        # set button color for selected button
-        self.home_button.configure(fg_color=("gray75", "gray25") if name == "Manage Appointment" else "transparent")
-        self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "Health data record" else "transparent")
-        self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "Emergency communications" else "transparent")
-
-        # show selected frame
-        if name == "Manage Appointment":
-            self.controller.show_internal_page("appointment")
-            self.close_sidebar()
-        if name == "Health data record":
-            self.controller.show_internal_page("data")
-            self.close_sidebar()
-        if name == "Emergency communications":
-            self.controller.show_internal_page("emergency")
-            self.close_sidebar()
-
-    def home_button_event(self):
-        self.select_frame_by_name("Manage Appointment")
-
-    def frame_2_button_event(self):
-        self.select_frame_by_name("Health data record")
-
-    def frame_3_button_event(self):
-        self.select_frame_by_name("Emergency communications")
-
-    def change_appearance_mode_event(self, new_appearance_mode):
-        ctk.set_appearance_mode(new_appearance_mode)
-
-    def close_sidebar(self):    #la rimuove dopo che ho scelto una pagina
-        self.navigation_frame.grid_remove()  # Nascondi il frame
-        self.sidebar_container.grid_remove()
-        self.grid_columnconfigure(0, weight=0)
-        
+     
 class PeriodicQuestionnaire(ctk.CTkFrame):
     def __init__(self, master, controller, patient_id):
         super().__init__(master, fg_color="white")
@@ -1287,72 +1223,6 @@ class EmergencyPage(ctk.CTkFrame):
         except sqlite3.Error as e:
             print("Database insert failed:", e)
             messagebox.showerror("Submission Failed", "There was an error submitting the form. Please try again.")
-
-    def menu_callback(self):
-        SIDEBAR_WIDTH=250
-        self.sidebar_container = ctk.CTkFrame(self, corner_radius=0, width=SIDEBAR_WIDTH)
-        self.sidebar_container.grid(row=0, column=0, sticky="ns", rowspan=8)
-        self.sidebar_container.grid_rowconfigure(0, weight=1)
-        self.navigation_frame = ctk.CTkFrame(self, corner_radius=0, width=SIDEBAR_WIDTH)
-        self.navigation_frame.grid(row=0, column=0, sticky="nsew", rowspan=8)
-        self.navigation_frame.grid_rowconfigure(4, weight=1)
-
-        self.navigation_frame_label = ctk.CTkLabel(self.navigation_frame, text="Menu",
-                                                             compound="left", font=ctk.CTkFont(size=15, weight="bold"))
-        self.navigation_frame_label.grid(row=0, column=0, padx=20, pady=20)
-        self.home_button = ctk.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Manage Appointment",
-                                                   fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                    anchor="w", command=self.home_button_event, width=SIDEBAR_WIDTH)
-        self.home_button.grid(row=1, column=0, sticky="ew")
-        self.frame_2_button = ctk.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Health data record",
-                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                       anchor="w", command=self.frame_2_button_event, width=SIDEBAR_WIDTH)
-        self.frame_2_button.grid(row=2, column=0, sticky="ew")
-        self.frame_3_button = ctk.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Emergency communications",
-                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                       anchor="w", command=self.frame_3_button_event, width=SIDEBAR_WIDTH)
-        self.frame_3_button.grid(row=3, column=0, sticky="ew")
-        self.frame_4_button = ctk.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Log out",
-                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                       anchor="w", command=self.frame_3_button_event, width=SIDEBAR_WIDTH)
-        self.frame_4_button.grid(row=5, column=0, sticky="sew")
-
-    def select_frame_by_name(self, name):
-        # set button color for selected button
-        self.home_button.configure(fg_color=("gray75", "gray25") if name == "Manage Appointment" else "transparent")
-        self.frame_2_button.configure(fg_color=("gray75", "gray25") if name == "Health data record" else "transparent")
-        self.frame_3_button.configure(fg_color=("gray75", "gray25") if name == "Emergency communications" else "transparent")
-
-        # show selected frame
-        if name == "Manage Appointment":
-            self.controller.show_internal_page("appointment")
-            self.close_sidebar()
-        if name == "Health data record":
-            self.controller.show_internal_page("data")
-            self.close_sidebar()
-        if name == "Emergency communications":
-            self.controller.show_internal_page("emergency")
-            self.close_sidebar()
-
-    def home_button_event(self):
-        self.select_frame_by_name("Manage Appointment")
-
-    def frame_2_button_event(self):
-        self.select_frame_by_name("Health data record")
-
-    def frame_3_button_event(self):
-        self.select_frame_by_name("Emergency communications")
-
-    def change_appearance_mode_event(self, new_appearance_mode):
-        ctk.set_appearance_mode(new_appearance_mode)
-
-    def close_sidebar(self):    #la rimuove dopo che ho scelto una pagina
-        self.navigation_frame.grid_remove()  # Nascondi il frame
-        self.sidebar_container.grid_remove()
-        self.grid_columnconfigure(0, weight=0)
-
-        
-
 
 # == Reference Page == #
 class Home_patPage(ctk.CTkFrame):

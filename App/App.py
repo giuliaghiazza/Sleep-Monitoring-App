@@ -106,30 +106,29 @@ class LoginPage(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
 
         self.cursor.execute('SELECT username FROM Users WHERE username=?', user)
-        result = self.cursor.fetchone()[0]
+        user_row = self.cursor.fetchone()
 
-        if result is not None:
+        if user_row is not None:
             self.cursor.execute('SELECT psw FROM Users WHERE username=?', user)
-            password_try= self.cursor.fetchone()[0]
-            if pw==password_try:
-                #self.outcome_lable.configure(text='Login Successful, welcome {user[0]}')
-                #self.outcome_lable.configure(text_color='green')                          
+            password_row = self.cursor.fetchone()
+            
+            if password_row is not None and pw == password_row[0]:
                 self.cursor.execute('SELECT role FROM Users WHERE username=?', user)
                 role = self.cursor.fetchone()[0]
                 self.cursor.execute('SELECT user_id FROM Users WHERE username=?', user)
                 user_id = self.cursor.fetchone()[0]
-                if role=='D':
+                
+                if role == 'D':
                     self.controller.show_page("home_doc", user_id=user_id)
-                elif role=='T':
+                elif role == 'T':
                     self.controller.show_page("home_tec", user_id=user_id)
-                elif role=='P':
+                elif role == 'P':
                     self.controller.show_page("home_pat", user_id=user_id)
             else:
-                self.outcome_label.configure(text='Password incorrect')
-                self.outcome_label.configure(text_color='red')
+                self.outcome_label.configure(text='Password incorrect', text_color='red')
         else:
-            self.outcome_label.configure(text='Username incorrect')
-            self.outcome_label.configure(text_color='red')
+            self.outcome_label.configure(text='Username incorrect', text_color='red')
+
 
 class SigninPage(ctk.CTkFrame):
     def __init__(self, master, controller):
